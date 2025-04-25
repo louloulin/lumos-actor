@@ -81,7 +81,7 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
         val (host, port) = parseAddress(address)
         var channelBuilder = ManagedChannelBuilder
                 .forAddress(host, port)
-        if (config.usePlainText) channelBuilder.usePlaintext(true)
+        if (config.usePlainText) channelBuilder.usePlaintext()
         config.idleTimeout?.let { channelBuilder.idleTimeout(it, TimeUnit.MILLISECONDS) }
         config.keepAliveTime?.let { channelBuilder.keepAliveTime(it, TimeUnit.MILLISECONDS) }
         config.keepAliveTimeout?.let { channelBuilder.keepAliveTimeout(it, TimeUnit.MILLISECONDS) }
@@ -111,4 +111,3 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
         logger.info("Connected to address $address")
     }
 }
-

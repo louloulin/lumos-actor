@@ -2,13 +2,11 @@ package actor.proto.mailbox
 
 import org.jctools.queues.MpscArrayQueue
 import org.jctools.queues.MpscGrowableArrayQueue
-import org.jctools.queues.MpscLinkedQueue8
+import org.jctools.queues.MpscLinkedQueue
 import org.jctools.queues.MpscUnboundedArrayQueue
-import org.jctools.queues.QueueFactory.newQueue
 import org.jctools.queues.atomic.MpscAtomicArrayQueue
 import org.jctools.queues.atomic.MpscGrowableAtomicArrayQueue
 import org.jctools.queues.atomic.MpscUnboundedAtomicArrayQueue
-import org.jctools.queues.spec.ConcurrentQueueSpec
 import java.util.concurrent.ConcurrentLinkedQueue
 
 private val emptyStats : Array<MailboxStatistics> = arrayOf()
@@ -25,6 +23,6 @@ fun newMpscGrowableArrayMailbox(initialCapacity: Int = 5, stats: Array<MailboxSt
 fun newMpscGrowableAtomicArrayMailbox(initialCapacity: Int = 5, stats: Array<MailboxStatistics> = emptyStats): Mailbox = DefaultMailbox(ConcurrentLinkedQueue<Any>(), MpscGrowableAtomicArrayQueue(initialCapacity, 2 shl 11), stats)
 
 
-fun newMpscLinkedMailbox(stats: Array<MailboxStatistics> = emptyStats): Mailbox = DefaultMailbox(ConcurrentLinkedQueue<Any>(), MpscLinkedQueue8(), stats)
+fun newMpscLinkedMailbox(stats: Array<MailboxStatistics> = emptyStats): Mailbox = DefaultMailbox(ConcurrentLinkedQueue<Any>(), MpscLinkedQueue(), stats)
 
-fun newSpecifiedMailbox(spec:ConcurrentQueueSpec, stats: Array<MailboxStatistics> = emptyStats): Mailbox = DefaultMailbox(ConcurrentLinkedQueue<Any>(), newQueue(spec) , stats)
+// Removed the newSpecifiedMailbox function as ConcurrentQueueSpec and newQueue are no longer available in the latest JCTools version
