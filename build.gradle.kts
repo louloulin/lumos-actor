@@ -13,7 +13,7 @@ buildscript {
 
 plugins {
     id("com.github.ben-manes.versions") version "0.50.0"
-    id("org.jetbrains.kotlin.jvm") version "2.1.10" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.9.20" apply false
 }
 
 allprojects {

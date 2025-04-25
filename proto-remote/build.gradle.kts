@@ -11,6 +11,14 @@ tasks.jar {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            srcDir("build/generated/source/proto/main/java")
+        }
+    }
+}
+
 dependencies {
     add("api", "io.grpc:grpc-netty:${project.extra["grpcVersion"]}")
     add("api", "io.grpc:grpc-protobuf:${project.extra["grpcVersion"]}")

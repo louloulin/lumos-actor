@@ -11,6 +11,14 @@ tasks.jar {
     }
 }
 
+sourceSets {
+    main {
+        java {
+            srcDir("build/generated/source/proto/main/java")
+        }
+    }
+}
+
 dependencies {
     add("api", "com.google.protobuf:protobuf-java:${project.extra["protobufVersion"]}")
     add("api", project(":proto-mailbox"))

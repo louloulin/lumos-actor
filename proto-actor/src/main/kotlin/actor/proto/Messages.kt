@@ -10,7 +10,7 @@ typealias PoisonPill = Protos.PoisonPill
 typealias Terminated = Protos.Terminated
 
 fun Terminated(who: PID, addressTerminated: Boolean): Terminated {
-    val t = Terminated.newBuilder()
+    val t = Protos.Terminated.newBuilder()
     t.who = who
     t.addressTerminated = addressTerminated
     return t.build()
