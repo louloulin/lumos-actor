@@ -1,5 +1,5 @@
 buildscript {
-    val kotlinVersion by extra("1.9.20")
+    val kotlinVersion by extra("2.1.10")
 
     repositories {
         mavenCentral()
@@ -13,6 +13,7 @@ buildscript {
 
 plugins {
     id("com.github.ben-manes.versions") version "0.50.0"
+    id("org.jetbrains.kotlin.jvm") version "2.1.10" apply false
 }
 
 allprojects {
@@ -50,10 +51,9 @@ subprojects {
         add("testRuntimeOnly", "org.junit.jupiter:junit-jupiter-engine:${project.extra["junitPlatformVersion"]}")
     }
 
-    configure<JavaPluginExtension> {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-        }
+    tasks.withType<JavaCompile> {
+        targetCompatibility = JavaVersion.VERSION_17.toString()
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
@@ -61,6 +61,11 @@ subprojects {
             jvmTarget = "17"
             allWarningsAsErrors = false
         }
+    }
+
+    tasks.withType<JavaCompile> {
+        targetCompatibility = JavaVersion.VERSION_17.toString()
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
     }
 
     tasks.withType<Test> {
