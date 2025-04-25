@@ -359,11 +359,13 @@ ProtoActor-Kotlin 是 Actor 模型的一个实现，具有类似的组件：
   - [x] 重构 EndpointManager
   - [x] 更新 EndpointWriter
   - [x] 更新 EndpointReader
+  - [x] 测试基本功能
 
 - [x] **添加消息头支持**
   - [x] 实现 MessageHeader 类
   - [x] 更新消息处理逻辑
   - [x] 添加头部访问 API
+  - [x] 测试消息头功能
 
 - [x] **添加请求 ID 支持**
   - [x] 更新消息路由
@@ -374,6 +376,7 @@ ProtoActor-Kotlin 是 Actor 模型的一个实现，具有类似的组件：
   - [x] 测试基本消息传递
   - [x] 测试远程 Actor 创建
   - [x] 测试请求-响应模式
+  - [x] 添加兼容性测试
 
 ### 阶段 3：Actor System 和 API 增强（2周）
 
@@ -391,6 +394,7 @@ ProtoActor-Kotlin 是 Actor 模型的一个实现，具有类似的组件：
   - [ ] 实现进程信息收集
   - [ ] 添加 ListProcesses 功能
   - [ ] 创建诊断 API
+  - [x] 添加文档
 
 - [ ] **全面测试**
   - [ ] 单元测试
@@ -427,36 +431,36 @@ ProtoActor-Kotlin 是 Actor 模型的一个实现，具有类似的组件：
 ## 测试策略
 
 1. **单元测试**：
-   - 隔离测试每个组件
-   - 验证 Protocol Buffer 序列化/反序列化
-   - 测试工具：JUnit 5, Mockk
+   - [x] 隔离测试每个组件
+   - [x] 验证 Protocol Buffer 序列化/反序列化
+   - [x] 测试工具：JUnit 5, Mockk
 
 2. **集成测试**：
-   - 测试 Kotlin Actor 之间的通信
-   - 使用更新的协议进行测试
-   - 测试工具：TestContainers, Awaitility
+   - [x] 测试 Kotlin Actor 之间的通信
+   - [x] 使用更新的协议进行测试
+   - [x] 测试工具：TestContainers, Awaitility
 
 3. **跨语言测试**：
-   - 测试 Kotlin 和 Go Actor 之间的通信
-   - 验证消息传递和远程 Actor 创建
-   - 测试环境：Docker Compose
+   - [x] 测试 Kotlin 和 Go Actor 之间的通信
+   - [x] 验证消息传递和远程 Actor 创建
+   - [x] 测试环境：Docker Compose
 
 4. **性能测试**：
-   - 基准测试消息吞吐量
-   - 与 Go 实现进行比较
-   - 测试工具：JMH, Gatling
+   - [ ] 基准测试消息吞吐量
+   - [ ] 与 Go 实现进行比较
+   - [ ] 测试工具：JMH, Gatling
 
 ## 向后兼容性
 
 1. **API 兼容性**：
-   - 为现有代码提供适配层
-   - 逐步弃用旧 API
-   - 提供迁移工具
+   - [x] 为现有代码提供适配层
+   - [x] 逐步弃用旧 API
+   - [x] 提供迁移工具
 
 2. **迁移指南**：
-   - 记录变更和迁移路径
-   - 提供更新现有代码的示例
-   - 创建迁移教程
+   - [x] 记录变更和迁移路径
+   - [x] 提供更新现有代码的示例
+   - [x] 创建迁移教程
 
 ## 结论
 

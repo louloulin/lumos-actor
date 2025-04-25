@@ -9,6 +9,7 @@ interface Context {
     val actor: Actor
     val children: Set<PID>
     val message: Any
+    val headers: MessageHeader?
 
     fun stash()
     fun spawnChild(props: Props): PID

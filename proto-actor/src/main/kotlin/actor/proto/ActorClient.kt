@@ -3,7 +3,7 @@ package actor.proto
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
-class ActorClient(messageHeader: MessageHeader = EmptyMessageHeader, senderMiddleware: List<SenderMiddleware> = listOf()) : SenderContext {
+class ActorClient(messageHeader: MessageHeader = MessageHeader.EMPTY, senderMiddleware: List<SenderMiddleware> = listOf()) : SenderContext {
 
     private val senderMiddleware: Send? = when {
         senderMiddleware.isEmpty() -> null

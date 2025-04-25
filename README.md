@@ -11,6 +11,9 @@ This is the Kotlin repository for [Proto.Actor](http://proto.actor/).
 ## Stability
 It's used in production but doesn't have the same adoption and stability as the [C#](https://github.com/AsynkronIT/protoactor-dotnet) and [Go](https://github.com/AsynkronIT/protoactor-go) implementations.
 
+## Compatibility with ProtoActor-Go
+This implementation is now compatible with ProtoActor-Go, allowing for cross-language communication between Kotlin and Go actors. The protocol buffer definitions have been updated to match the Go implementation, and the remote communication protocol has been aligned to ensure interoperability.
+
 ## How to build
 ```
 ./gradlew build
@@ -46,6 +49,10 @@ Dependencies
 
 ## Getting started
 The best place currently for learning how to use Proto.Actor is the [examples](https://github.com/AsynkronIT/protoactor-kotlin/tree/master/examples).
+
+For information about the compatibility implementation, see the following documentation:
+- [Implementation Documentation](docs/implementation.md)
+- [Remote Communication](docs/remote.md)
 
 
 ### Hello world

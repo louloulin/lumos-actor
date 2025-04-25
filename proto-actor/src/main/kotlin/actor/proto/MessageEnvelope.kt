@@ -1,6 +1,6 @@
 package actor.proto
 
-class MessageEnvelope(val message: Any, val sender: PID?, var header: MessageHeader?) {
+class MessageEnvelope(val message: Any, val sender: PID?, var header: MessageHeader? = null) {
     fun getHeader(key: String, default: String): String = when (header) {
         null -> default
         else -> header!!.getOrDefault(key, default)
