@@ -5,13 +5,10 @@ import actor.proto.Context
 import actor.proto.PID
 import actor.proto.fromProducer
 import actor.proto.mailbox.DefaultDispatcher
-import actor.proto.mailbox.newSpecifiedMailbox
+import actor.proto.mailbox.newMpscUnboundedArrayMailbox
 import actor.proto.send
 import actor.proto.spawn
 import actor.proto.stop
-import org.jctools.queues.spec.ConcurrentQueueSpec
-import org.jctools.queues.spec.Ordering
-import org.jctools.queues.spec.Preference
 import java.lang.Runtime.getRuntime
 import java.lang.System.nanoTime
 import java.util.concurrent.CountDownLatch
@@ -25,7 +22,6 @@ fun main(args: Array<String>) {
 }
 
 fun run() {
-    val mailboxSpec = ConcurrentQueueSpec(1, 1, 5000, Ordering.PRODUCER_FIFO, Preference.NONE)
     val messageCount = 1_000_000
     val batchSize = 400
     println("Dispatcher\t\tElapsed\t\tMsg/sec")
@@ -37,13 +33,13 @@ fun run() {
         val echoProps =
             fromProducer { EchoActor() }
                 .withDispatcher(d)
-                .withMailbox { newSpecifiedMailbox(mailboxSpec) }
+                .withMailbox { newMpscUnboundedArrayMailbox() }
 
         val latch = CountDownLatch(clientCount)
         val clientProps =
             fromProducer { PingActor(latch, messageCount, batchSize) }
                 .withDispatcher(d)
-                .withMailbox { newSpecifiedMailbox(mailboxSpec) }
+                .withMailbox { newMpscUnboundedArrayMailbox() }
 
         val pairs = (0 until clientCount)
             .map { Pair(spawn(clientProps), spawn(echoProps)) }
@@ -108,4 +104,3 @@ class PingActor(
         }
     }
 }
-
