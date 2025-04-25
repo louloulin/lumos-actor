@@ -7,7 +7,7 @@ buildscript {
 
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        classpath("com.netflix.nebula:nebula-release-plugin:18.0.6")
+        classpath("com.netflix.nebula:nebula-release-plugin:20.2.0")
     }
 }
 
@@ -20,7 +20,7 @@ allprojects {
 
     apply(plugin = "idea")
     apply(plugin = "nebula.release")
-    
+
     // Create the artifact extension for all projects
     extensions.create<ArtifactExtension>("artifact")
 }
@@ -123,5 +123,5 @@ configure(subprojects.filter { it.name != "examples" }) {
 }
 
 tasks.wrapper {
-    gradleVersion = "8.5"
+    gradleVersion = "8.7"
 }
