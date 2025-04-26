@@ -8,7 +8,7 @@ extensions.configure<ArtifactExtension> {
 plugins.withId("com.google.protobuf") {
     configure<com.google.protobuf.gradle.ProtobufExtension> {
         protoc {
-            artifact = "com.google.protobuf:protoc:3.17.3"
+            artifact = "com.google.protobuf:protoc:${project.extra["protobufVersion"]}"
         }
     }
 }

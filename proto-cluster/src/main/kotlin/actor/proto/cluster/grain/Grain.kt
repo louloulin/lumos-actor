@@ -6,7 +6,6 @@ import actor.proto.cluster.ClusterIdentity
 import actor.proto.persistence.Provider
 import actor.proto.request
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 
@@ -66,7 +65,7 @@ abstract class GrainBase(
      */
     suspend fun <T> request(message: Any, timeout: Long): T {
         val pid = getPID()
-        return cluster.actorSystem.request<T>(pid, message, timeout)
+        return cluster.actorSystem.requestAsync<T>(pid, message, java.time.Duration.ofMillis(timeout))
     }
 
     /**

@@ -24,7 +24,6 @@ private fun runOnce() {
     send(managerPid, Begin)
     cd.await()
     System.gc()
-    System.runFinalization()
 }
 
 private fun spawnManager(): Pair<CountDownLatch, PID> {

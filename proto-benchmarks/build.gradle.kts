@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm")
-    id("me.champeau.jmh") version "0.7.0"
+    id("me.champeau.jmh") version "0.7.1"
 }
 
 dependencies {
@@ -8,20 +8,20 @@ dependencies {
     implementation(project(":proto-remote"))
     implementation(project(":proto-cluster"))
     implementation(project(":proto-persistence"))
-    
-    implementation("io.github.microutils:kotlin-logging:2.0.11")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
-    
+
+    implementation("io.github.microutils:kotlin-logging:3.0.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+
     // JMH dependencies
-    jmh("org.openjdk.jmh:jmh-core:1.35")
-    jmh("org.openjdk.jmh:jmh-generator-annprocess:1.35")
-    
+    jmh("org.openjdk.jmh:jmh-core:1.37")
+    jmh("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+
     // Metrics
-    implementation("io.dropwizard.metrics:metrics-core:4.2.13")
-    implementation("io.dropwizard.metrics:metrics-jmx:4.2.13")
-    
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    implementation("io.dropwizard.metrics:metrics-core:4.2.25")
+    implementation("io.dropwizard.metrics:metrics-jmx:4.2.25")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
 }
 
 jmh {
@@ -30,6 +30,7 @@ jmh {
     fork.set(2)
     benchmarkMode.set(listOf("thrpt"))
     timeUnit.set("ms")
+    jmhVersion.set("1.37")
 }
 
 tasks.test {

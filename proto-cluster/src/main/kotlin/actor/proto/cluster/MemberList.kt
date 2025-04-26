@@ -17,11 +17,11 @@ class MemberList(private val cluster: Cluster) {
     private val lock = ReentrantReadWriteLock()
     private val members = ConcurrentHashMap<String, Member>()
     private val memberStrategyByKind = ConcurrentHashMap<String, MemberStrategy>()
-    private val eventStream: EventStream = cluster.actorSystem.eventStream()
+    private val eventStream = cluster.actorSystem.eventStream()
 
     init {
         // Subscribe to topology events
-        eventStream.subscribe<Any>("topology") { event ->
+        eventStream.subscribe({ event ->
             when (event) {
                 is ClusterTopology -> {
                     // Handle topology changes
@@ -34,7 +34,7 @@ class MemberList(private val cluster: Cluster) {
                     }
                 }
             }
-        }
+        })
     }
 
     /**

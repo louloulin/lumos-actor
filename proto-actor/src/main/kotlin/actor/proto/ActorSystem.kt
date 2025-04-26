@@ -5,12 +5,17 @@ import actor.proto.diagnostics.MatchType
 import actor.proto.diagnostics.ProcessInfo
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.future.await
 
 /**
  * ActorSystem is the central management unit for actors.
  * It provides methods for creating, finding, and managing actors.
  */
 class ActorSystem(val name: String) {
+    val address: String
+        get() = ProcessRegistry.address
+
+    fun eventStream(): EventStreamImpl = EventStream
     private val processRegistry = ProcessRegistry
     private val rootContext = RootContext(this)
     private val diagnostics = Diagnostics(this)

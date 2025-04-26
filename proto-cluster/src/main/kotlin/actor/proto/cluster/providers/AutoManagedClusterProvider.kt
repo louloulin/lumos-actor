@@ -30,10 +30,10 @@ class AutoManagedClusterProvider(
     private val heartbeats = ConcurrentHashMap<String, AtomicLong>()
     private lateinit var pid: PID
     private var shutdown = false
-    
+
     override suspend fun startMember(cluster: Cluster): Boolean {
         this.cluster = cluster
-        
+
         // Create our own member
         val host = InetAddress.getLocalHost().hostName
         val id = "${host}:${port}"
@@ -43,64 +43,64 @@ class AutoManagedClusterProvider(
             port = port,
             status = MemberStatus.ALIVE
         )
-        
+
         // Add our member to the list
         members[id] = member
         heartbeats[id] = AtomicLong(0)
-        
+
         // Start the member actor
         val props = fromProducer { MemberActor(this) }
         pid = cluster.actorSystem.actorOf(props)
-        
+
         // Update the member list
         cluster.memberList.updateMembers(members.values.toList())
-        
+
         // Connect to seed nodes
         for (seedNode in seedNodes) {
             if (seedNode != id) {
                 connectToMember(seedNode)
             }
         }
-        
+
         return true
     }
-    
+
     override suspend fun startClient(cluster: Cluster): Boolean {
         this.cluster = cluster
-        
+
         // Start the member actor
         val props = fromProducer { MemberActor(this) }
         pid = cluster.actorSystem.actorOf(props)
-        
+
         // Connect to seed nodes
         for (seedNode in seedNodes) {
             connectToMember(seedNode)
         }
-        
+
         return true
     }
-    
+
     override suspend fun shutdown(graceful: Boolean): Boolean {
         shutdown = true
-        
+
         if (graceful) {
             // Update our status to LEAVING
-            val id = cluster.actorSystem.address()
+            val id = cluster.actorSystem.address
             val member = members[id]
             if (member != null) {
                 members[id] = member.copy(status = MemberStatus.LEAVING)
-                
+
                 // Update the member list
                 cluster.memberList.updateMembers(members.values.toList())
-                
+
                 // Wait for the update to propagate
                 delay(1000)
             }
         }
-        
+
         return true
     }
-    
+
     /**
      * Connect to a member.
      * @param memberId The ID of the member to connect to.
@@ -112,22 +112,22 @@ class AutoManagedClusterProvider(
             val parts = memberId.split(":")
             val host = parts[0]
             val port = parts[1].toInt()
-            
+
             val member = Member(
                 id = memberId,
                 host = host,
                 port = port,
                 status = MemberStatus.ALIVE
             )
-            
+
             members[memberId] = member
             heartbeats[memberId] = AtomicLong(0)
-            
+
             // Update the member list
             cluster.memberList.updateMembers(members.values.toList())
         }
     }
-    
+
     /**
      * Update the heartbeat for a member.
      * @param memberId The ID of the member.
@@ -135,37 +135,37 @@ class AutoManagedClusterProvider(
     fun updateHeartbeat(memberId: String) {
         heartbeats[memberId]?.incrementAndGet()
     }
-    
+
     /**
      * Check for dead members.
      */
     fun checkDeadMembers() {
         val now = System.currentTimeMillis()
         val deadMembers = mutableListOf<String>()
-        
+
         for ((memberId, member) in members) {
             if (member.status == MemberStatus.ALIVE) {
                 val lastHeartbeat = heartbeats[memberId]?.get() ?: 0
                 val elapsed = now - lastHeartbeat
-                
+
                 if (elapsed > cluster.config.heartbeatExpiration.toMillis()) {
                     deadMembers.add(memberId)
                 }
             }
         }
-        
+
         // Remove dead members
         for (memberId in deadMembers) {
             members.remove(memberId)
             heartbeats.remove(memberId)
         }
-        
+
         // Update the member list
         if (deadMembers.isNotEmpty()) {
             cluster.memberList.updateMembers(members.values.toList())
         }
     }
-    
+
     /**
      * Get all members.
      * @return A list of all members.
@@ -183,21 +183,21 @@ class MemberActor(private val provider: AutoManagedClusterProvider) : Actor {
         when (msg) {
             is actor.proto.Started -> {
                 // Start the heartbeat loop
-                launch {
+                kotlinx.coroutines.GlobalScope.launch {
                     while (true) {
                         try {
                             // Update our heartbeat
-                            provider.updateHeartbeat(self.address)
-                            
+                            provider.updateHeartbeat(self.id)
+
                             // Check for dead members
                             provider.checkDeadMembers()
-                            
+
                             // TODO: Send heartbeats to other members
-                            
+
                         } catch (e: Exception) {
                             logger.error(e) { "Error in heartbeat loop" }
                         }
-                        
+
                         delay(1000)
                     }
                 }

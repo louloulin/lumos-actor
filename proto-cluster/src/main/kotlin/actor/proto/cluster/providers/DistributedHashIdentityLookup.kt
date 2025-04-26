@@ -21,37 +21,37 @@ class DistributedHashIdentityLookup : IdentityLookup {
     private lateinit var cluster: Cluster
     private val kinds = ConcurrentHashMap<String, Kind>()
     private var isClient = false
-    
+
     override suspend fun setup(cluster: Cluster, kinds: Map<String, Kind>, isClient: Boolean) {
         this.cluster = cluster
         this.kinds.putAll(kinds)
         this.isClient = isClient
-        
+
         // Start the placement actor
         val props = fromProducer { PlacementActor(this) }
         cluster.actorSystem.actorOf(props, "placement")
     }
-    
+
     override suspend fun lookup(clusterIdentity: ClusterIdentity): PID {
         // Check if the PID is in the cache
         val cachedPid = cluster.pidCache.get(clusterIdentity)
         if (cachedPid != null) {
             return cachedPid
         }
-        
+
         // Find the member that should host this actor
         val memberId = cluster.memberList.getPartitionMember(clusterIdentity)
             ?: throw TimeoutException("No members available for kind ${clusterIdentity.kind}")
-        
+
         // If we're the member that should host this actor, activate it locally
-        if (memberId == cluster.actorSystem.address() && !isClient) {
+        if (memberId == cluster.actorSystem.address && !isClient) {
             return activateLocally(clusterIdentity)
         }
-        
+
         // Otherwise, request activation from the member
         return requestActivation(memberId, clusterIdentity)
     }
-    
+
     /**
      * Activate an actor locally.
      * @param clusterIdentity The cluster identity of the actor.
@@ -60,16 +60,16 @@ class DistributedHashIdentityLookup : IdentityLookup {
     private suspend fun activateLocally(clusterIdentity: ClusterIdentity): PID {
         val kind = kinds[clusterIdentity.kind]
             ?: throw IllegalArgumentException("Unknown kind ${clusterIdentity.kind}")
-        
+
         // Create the actor
         val pid = cluster.actorSystem.actorOf(kind.props, clusterIdentity.identity)
-        
+
         // Add to the cache
         cluster.pidCache.add(clusterIdentity, pid)
-        
+
         return pid
     }
-    
+
     /**
      * Request activation from a member.
      * @param memberId The ID of the member.
@@ -80,10 +80,10 @@ class DistributedHashIdentityLookup : IdentityLookup {
         // TODO: Implement remote activation request
         // For now, just create a PID for the remote actor
         val pid = PID(memberId, clusterIdentity.identity)
-        
+
         // Add to the cache
         cluster.pidCache.add(clusterIdentity, pid)
-        
+
         return pid
     }
 }

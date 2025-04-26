@@ -13,13 +13,13 @@ private val logger = KotlinLogging.logger {}
  */
 abstract class GrainPersistentActor<TState> : PersistentActor() {
     private var state: TState? = null
-    
+
     /**
      * Get the initial state of the grain.
      * @return The initial state.
      */
     abstract fun initialState(): TState
-    
+
     /**
      * Get the current state of the grain.
      * @return The current state.
@@ -27,7 +27,7 @@ abstract class GrainPersistentActor<TState> : PersistentActor() {
     fun getState(): TState {
         return state ?: initialState().also { state = it }
     }
-    
+
     /**
      * Set the state of the grain.
      * @param newState The new state.
@@ -35,13 +35,16 @@ abstract class GrainPersistentActor<TState> : PersistentActor() {
     fun setState(newState: TState) {
         state = newState
     }
-    
+
     override suspend fun receiveRecover(context: Context, message: Any) {
         when (message) {
-            is TState -> {
-                @Suppress("UNCHECKED_CAST")
-                state = message
-                logger.debug { "Recovered state: $state" }
+            // Check if message is of type TState using reflection
+            is Any -> {
+                if (initialState() != null && initialState()!!::class.java.isAssignableFrom(message.javaClass)) {
+                    @Suppress("UNCHECKED_CAST")
+                    state = message as TState
+                    logger.debug { "Recovered state: $state" }
+                }
             }
             is ReplayComplete -> {
                 logger.debug { "Recovery complete, state: $state" }
@@ -54,7 +57,7 @@ abstract class GrainPersistentActor<TState> : PersistentActor() {
             }
         }
     }
-    
+
     override suspend fun receiveCommand(context: Context, message: Any) {
         when (message) {
             is RequestSnapshot -> {
@@ -67,7 +70,7 @@ abstract class GrainPersistentActor<TState> : PersistentActor() {
             }
         }
     }
-    
+
     /**
      * Handle a command message.
      * @param context The actor context.

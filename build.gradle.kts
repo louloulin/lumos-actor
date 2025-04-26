@@ -1,5 +1,14 @@
+import org.gradle.jvm.tasks.Jar
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.the
+
 buildscript {
-    val kotlinVersion by extra("2.1.10")
+    val kotlinVersion by extra("1.9.22")
 
     repositories {
         mavenCentral()
@@ -15,7 +24,7 @@ buildscript {
 
 plugins {
     id("com.github.ben-manes.versions") version "0.50.0"
-    id("org.jetbrains.kotlin.jvm") version "1.9.20" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.9.22" apply false
     id("com.google.protobuf") version "0.9.4" apply false
 }
 
@@ -34,12 +43,12 @@ subprojects {
     apply(plugin = "com.google.protobuf")
 
     val kotlinVersion: String by rootProject.extra
-    extra["coroutinesVersion"] = "1.7.3"
-    extra["protobufVersion"] = "3.24.0"
-    extra["grpcVersion"] = "1.58.0"
-    extra["slf4jVersion"] = "2.0.9"
-    extra["awaitilityVersion"] = "4.2.0"
-    extra["junitPlatformVersion"] = "5.10.0"
+    extra["coroutinesVersion"] = "1.8.0"
+    extra["protobufVersion"] = "3.25.3"
+    extra["grpcVersion"] = "1.62.2"
+    extra["slf4jVersion"] = "2.0.12"
+    extra["awaitilityVersion"] = "4.2.1"
+    extra["junitPlatformVersion"] = "5.10.2"
     extra["kotlinLoggingVersion"] = "3.0.5"
     extra["jctoolsVersion"] = "4.0.5"
     extra["javaxAnnotationsVersion"] = "1.3.2"
@@ -69,8 +78,15 @@ subprojects {
 
     configure<com.google.protobuf.gradle.ProtobufExtension> {
         protoc {
-            artifact = "com.google.protobuf:protoc:3.17.3"
+            artifact = "com.google.protobuf:protoc:${project.extra["protobufVersion"]}"
         }
+    }
+
+    apply(plugin = "java")
+
+    dependencies {
+        "testImplementation"("org.junit.jupiter:junit-jupiter-api:${project.extra["junitPlatformVersion"]}")
+        "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:${project.extra["junitPlatformVersion"]}")
     }
 
     tasks.withType<Test> {
@@ -81,6 +97,10 @@ subprojects {
 configure(subprojects.filter { it.name != "examples" }) {
     apply(plugin = "maven-publish")
     apply(plugin = "jacoco")
+
+    configure<JacocoPluginExtension> {
+        toolVersion = "0.8.11"
+    }
 
     tasks.register<Jar>("sourcesJar") {
         archiveClassifier.set("sources")
@@ -125,6 +145,7 @@ configure(subprojects.filter { it.name != "examples" }) {
             xml.required.set(true)
             html.required.set(true)
         }
+        dependsOn(tasks.named("test"))
     }
 
     tasks.named("check") {
