@@ -17,11 +17,11 @@ class MemberList(private val cluster: Cluster) {
     private val lock = ReentrantReadWriteLock()
     private val members = ConcurrentHashMap<String, Member>()
     private val memberStrategyByKind = ConcurrentHashMap<String, MemberStrategy>()
-    private val eventStream: EventStream = cluster.actorSystem.eventStream
-    
+    private val eventStream: EventStream = cluster.actorSystem.eventStream()
+
     init {
         // Subscribe to topology events
-        eventStream.subscribe { event ->
+        eventStream.subscribe<Any>("topology") { event ->
             when (event) {
                 is ClusterTopology -> {
                     // Handle topology changes
@@ -36,7 +36,7 @@ class MemberList(private val cluster: Cluster) {
             }
         }
     }
-    
+
     /**
      * Get all members in the cluster.
      * @return A list of all members.
@@ -44,7 +44,7 @@ class MemberList(private val cluster: Cluster) {
     fun getMembers(): List<Member> {
         return lock.read { members.values.toList() }
     }
-    
+
     /**
      * Get a member by ID.
      * @param id The ID of the member.
@@ -53,7 +53,7 @@ class MemberList(private val cluster: Cluster) {
     fun getMember(id: String): Member? {
         return lock.read { members[id] }
     }
-    
+
     /**
      * Get the partition member for a given identity and kind.
      * @param identity The identity of the actor.
@@ -66,7 +66,7 @@ class MemberList(private val cluster: Cluster) {
             strategy.getPartition(identity)
         }
     }
-    
+
     /**
      * Get the partition member for a given cluster identity.
      * @param clusterIdentity The cluster identity of the actor.
@@ -75,7 +75,7 @@ class MemberList(private val cluster: Cluster) {
     fun getPartitionMember(clusterIdentity: ClusterIdentity): String? {
         return getPartitionMember(clusterIdentity.identity, clusterIdentity.kind)
     }
-    
+
     /**
      * Update the member list with a new set of members.
      * @param newMembers The new set of members.
@@ -84,18 +84,18 @@ class MemberList(private val cluster: Cluster) {
         lock.write {
             val oldMembers = members.values.toSet()
             val newMembersSet = newMembers.toSet()
-            
+
             // Find joined and left members
             val joined = newMembersSet - oldMembers
             val left = oldMembers - newMembersSet
-            
+
             // Update members map
             members.clear()
             newMembers.forEach { members[it.id] = it }
-            
+
             // Update member strategies
             updateMemberStrategies()
-            
+
             // Publish topology event
             if (joined.isNotEmpty() || left.isNotEmpty()) {
                 val topology = ClusterTopology(
@@ -107,7 +107,7 @@ class MemberList(private val cluster: Cluster) {
             }
         }
     }
-    
+
     /**
      * Add a member to the member list.
      * @param member The member to add.
@@ -116,10 +116,10 @@ class MemberList(private val cluster: Cluster) {
         lock.write {
             val oldMember = members[member.id]
             members[member.id] = member
-            
+
             // Update member strategies
             updateMemberStrategies()
-            
+
             // Publish topology event if this is a new member
             if (oldMember == null) {
                 val topology = ClusterTopology(
@@ -131,7 +131,7 @@ class MemberList(private val cluster: Cluster) {
             }
         }
     }
-    
+
     /**
      * Remove a member from the member list.
      * @param id The ID of the member to remove.
@@ -139,10 +139,10 @@ class MemberList(private val cluster: Cluster) {
     fun removeMember(id: String) {
         lock.write {
             val oldMember = members.remove(id)
-            
+
             // Update member strategies
             updateMemberStrategies()
-            
+
             // Publish topology event if a member was removed
             if (oldMember != null) {
                 val topology = ClusterTopology(
@@ -154,7 +154,7 @@ class MemberList(private val cluster: Cluster) {
             }
         }
     }
-    
+
     /**
      * Update the status of a member.
      * @param id The ID of the member.
@@ -164,12 +164,12 @@ class MemberList(private val cluster: Cluster) {
         lock.write {
             val member = members[id] ?: return@write
             members[id] = member.copy(status = status)
-            
+
             // Update member strategies
             updateMemberStrategies()
         }
     }
-    
+
     /**
      * Handle topology changes from the cluster provider.
      * @param topology The new topology.
@@ -179,19 +179,20 @@ class MemberList(private val cluster: Cluster) {
             // Handle blocked members
             topology.blocked.forEach { id ->
                 // Add to block list
-                cluster.remote.blockList.block(id)
+                // TODO: Implement block list functionality
+                // cluster.remote.blockList.block(id)
             }
-            
+
             // Handle left members
             topology.left.forEach { id ->
                 members.remove(id)
             }
-            
+
             // Update member strategies
             updateMemberStrategies()
         }
     }
-    
+
     /**
      * Handle gossip update for topology.
      * @param update The gossip update.
@@ -199,20 +200,20 @@ class MemberList(private val cluster: Cluster) {
     private fun handleGossipTopologyUpdate(update: GossipUpdate) {
         // TODO: Implement gossip topology update handling
     }
-    
+
     /**
      * Update all member strategies.
      */
     private fun updateMemberStrategies() {
         // Clear all strategies
         memberStrategyByKind.clear()
-        
+
         // Create new strategies for each kind
         cluster.getClusterKinds().keys.forEach { kind ->
             createMemberStrategyForKind(kind)
         }
     }
-    
+
     /**
      * Create a member strategy for a kind.
      * @param kind The kind to create a strategy for.
@@ -220,12 +221,12 @@ class MemberList(private val cluster: Cluster) {
      */
     private fun createMemberStrategyForKind(kind: String): MemberStrategy {
         val strategy = cluster.config.memberStrategyBuilder(cluster, kind)
-        
+
         // Add all alive members to the strategy
         members.values
             .filter { it.status == MemberStatus.ALIVE }
             .forEach { strategy.addMember(it.id) }
-        
+
         memberStrategyByKind[kind] = strategy
         return strategy
     }

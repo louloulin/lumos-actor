@@ -38,13 +38,31 @@ object Remote {
     var system: actor.proto.ActorSystem = actor.proto.ActorSystem.default()
         private set
 
+    /**
+     * Create a new Remote instance.
+     * @param system The actor system to use
+     * @param config The remote configuration
+     * @return A new Remote instance
+     */
+    fun create(system: actor.proto.ActorSystem, config: RemoteConfig): Remote {
+        this.system = system
+        return this
+    }
 
+    /**
+     * Shutdown the remote system.
+     * @param graceful Whether to shutdown gracefully
+     */
+    fun shutdown(graceful: Boolean) {
+        if (graceful) {
+            _server.shutdown().awaitTermination(10, TimeUnit.SECONDS)
+        } else {
+            _server.shutdownNow()
+        }
+        logger.info("Stopped Proto.Actor server")
+    }
 
-
-
-
-
-    fun start(hostname: String, port: Int, config: RemoteConfig = RemoteConfig()) {
+    fun start(hostname: String, port: Int, config: RemoteConfig = RemoteConfig(hostname, port)) {
         ProcessRegistry.registerHostResolver { pid -> RemoteProcess(pid) }
         val endpointReader = EndpointReader(this)
         val serverBuilder = NettyServerBuilder.forPort(port).addService(endpointReader)

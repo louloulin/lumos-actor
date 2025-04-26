@@ -3,6 +3,7 @@ package actor.proto.cluster
 import actor.proto.ActorSystem
 import actor.proto.PID
 import actor.proto.remote.Remote
+import actor.proto.remote.RemoteConfig
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -17,89 +18,93 @@ class Cluster(
 ) {
     private val kinds = mutableMapOf<String, Kind>()
     private val activatedKinds = mutableMapOf<String, ActivatedKind>()
-    
+
     lateinit var memberList: MemberList
     lateinit var pidCache: PidCache
     lateinit var identityLookup: IdentityLookup
     lateinit var gossip: Gossiper
     lateinit var pubSub: PubSub
     lateinit var remote: Remote
-    
+
     /**
      * Start the cluster as a member.
      */
     suspend fun startMember(): Boolean {
         logger.info { "Starting Proto.Actor cluster member at ${actorSystem.address}" }
-        
+
         // Initialize components
         remote = Remote.create(actorSystem, config.remoteConfig)
         pidCache = PidCache()
         memberList = MemberList(this)
-        
+
         // Initialize identity lookup
         identityLookup = config.identityLookup
         identityLookup.setup(this, getClusterKinds(), false)
-        
+
         // Initialize gossip
         gossip = Gossiper(this)
-        
+
         // Initialize pubsub
         pubSub = PubSub(this)
-        
+
         // Initialize kinds
         initKinds()
-        
+
         // Start remote
-        remote.start()
-        
+        remote.start(config.remoteConfig.hostname, config.remoteConfig.port)
+
         // Start cluster provider
         return config.clusterProvider.startMember(this)
     }
-    
+
     /**
      * Start the cluster as a client.
      */
     suspend fun startClient(): Boolean {
         logger.info { "Starting Proto.Actor cluster client at ${actorSystem.address}" }
-        
+
         // Initialize components
         remote = Remote.create(actorSystem, config.remoteConfig)
         pidCache = PidCache()
         memberList = MemberList(this)
-        
+
         // Initialize identity lookup
         identityLookup = config.identityLookup
         identityLookup.setup(this, getClusterKinds(), true)
-        
+
         // Initialize gossip
         gossip = Gossiper(this)
-        
+
         // Initialize pubsub
         pubSub = PubSub(this)
-        
+
         // Start remote
-        remote.start()
-        
+        remote.start(config.remoteConfig.hostname, config.remoteConfig.port)
+
         // Start cluster provider
         return config.clusterProvider.startClient(this)
     }
-    
+
     /**
      * Shutdown the cluster.
      * @param graceful Whether to shutdown gracefully.
      */
     suspend fun shutdown(graceful: Boolean): Boolean {
         logger.info { "Shutting down Proto.Actor cluster at ${actorSystem.address}" }
-        
+
         // Shutdown cluster provider
         val result = config.clusterProvider.shutdown(graceful)
-        
+
         // Shutdown remote
-        remote.shutdown(graceful)
-        
+        if (graceful) {
+            remote.shutdown(true)
+        } else {
+            remote.shutdown(false)
+        }
+
         return result
     }
-    
+
     /**
      * Register a kind with the cluster.
      * @param kind The kind to register.
@@ -107,7 +112,7 @@ class Cluster(
     fun registerKind(kind: Kind) {
         kinds[kind.name] = kind
     }
-    
+
     /**
      * Get a kind by name.
      * @param name The name of the kind.
@@ -116,7 +121,7 @@ class Cluster(
     fun getKind(name: String): Kind? {
         return kinds[name]
     }
-    
+
     /**
      * Get all registered kinds.
      * @return A map of kind names to kinds.
@@ -124,7 +129,7 @@ class Cluster(
     fun getClusterKinds(): Map<String, Kind> {
         return kinds.toMap()
     }
-    
+
     /**
      * Get a virtual actor by identity and kind.
      * @param identity The identity of the actor.
@@ -135,7 +140,7 @@ class Cluster(
         val clusterIdentity = ClusterIdentity(identity, kind)
         return identityLookup.lookup(clusterIdentity)
     }
-    
+
     /**
      * Get a virtual actor by cluster identity.
      * @param clusterIdentity The cluster identity of the actor.
@@ -144,7 +149,7 @@ class Cluster(
     suspend fun get(clusterIdentity: ClusterIdentity): PID {
         return identityLookup.lookup(clusterIdentity)
     }
-    
+
     /**
      * Initialize the registered kinds.
      */
@@ -154,7 +159,7 @@ class Cluster(
             activatedKinds[name] = activatedKind
         }
     }
-    
+
     companion object {
         /**
          * Create a new cluster.
