@@ -15,13 +15,18 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
     private var _headers: Map<String, String> = mapOf()
     private var senderMiddleware: Send? = null
     private var spawnMiddleware: SpawnFunc? = null
+    private var guardianStrategy: SupervisorStrategy? = null
 
     /**
      * 获取当前 Actor 的 PID
      * @return 当前 Actor 的 PID
      */
     override val self: PID
-        get() = actorSystem.deadLetter()
+        get() = if (guardianStrategy != null) {
+            actorSystem.guardians.getGuardianPid(guardianStrategy!!)
+        } else {
+            actorSystem.deadLetter()
+        }
 
     /**
      * 获取当前 Actor
@@ -60,6 +65,7 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
         ctx._headers = headers
         ctx.senderMiddleware = this.senderMiddleware
         ctx.spawnMiddleware = this.spawnMiddleware
+        ctx.guardianStrategy = this.guardianStrategy
         return ctx
     }
 
@@ -76,6 +82,7 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
             process.sendUserMessage(target, envelope)
         })
         ctx.spawnMiddleware = this.spawnMiddleware
+        ctx.guardianStrategy = this.guardianStrategy
         return ctx
     }
 
@@ -91,6 +98,21 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
         ctx.spawnMiddleware = makeSpawnMiddlewareChain(middleware.toList()) { system, id, props, parentContext ->
             system.actorOf(props, id)
         }
+        ctx.guardianStrategy = this.guardianStrategy
+        return ctx
+    }
+
+    /**
+     * 创建一个新的 RootContext 实例，带有指定的 Guardian 策略
+     * @param strategy 监督策略
+     * @return 新的 RootContext 实例
+     */
+    fun withGuardian(strategy: SupervisorStrategy): RootContext {
+        val ctx = RootContext(actorSystem)
+        ctx._headers = this._headers
+        ctx.senderMiddleware = this.senderMiddleware
+        ctx.spawnMiddleware = this.spawnMiddleware
+        ctx.guardianStrategy = strategy
         return ctx
     }
 

@@ -20,8 +20,7 @@ class ProcessRegistryImplTest {
             override fun sendSystemMessage(pid: PID, message: SystemMessage) {}
         }
 
-        val (pid, success) = registry.put("test-process", process)
-        assertTrue(success)
+        val pid = registry.put("test-process", process)
         assertEquals("test-process", pid.id)
 
         val retrievedProcess = registry.get("test-process")
@@ -54,11 +53,14 @@ class ProcessRegistryImplTest {
             override fun sendSystemMessage(pid: PID, message: SystemMessage) {}
         }
 
-        val (_, success1) = registry.put("test-process-dup", process1)
-        assertTrue(success1)
+        registry.put("test-process-dup", process1)
 
-        val (_, success2) = registry.put("test-process-dup", process2)
-        assertFalse(success2)
+        try {
+            registry.put("test-process-dup", process2)
+            fail("Expected ProcessNameExistException")
+        } catch (e: ProcessNameExistException) {
+            // Expected
+        }
 
         val retrievedProcess = registry.get("test-process-dup")
         assertSame(process1, retrievedProcess, "Should retrieve the first process")
@@ -82,7 +84,7 @@ class ProcessRegistryImplTest {
             override fun sendSystemMessage(pid: PID, message: SystemMessage) {}
         }
 
-        val (pid, _) = registry.put("test-process-remove", process)
+        val pid = registry.put("test-process-remove", process)
         registry.remove(pid)
 
         val retrievedProcess = registry.get("test-process-remove")
@@ -111,10 +113,10 @@ class ProcessRegistryImplTest {
                         }
 
                         val id = "concurrent-${i}-${j}"
-                        val (_, success) = registry.put(id, process)
-                        if (success) {
+                        try {
+                            registry.put(id, process)
                             successCount.incrementAndGet()
-                        } else {
+                        } catch (e: ProcessNameExistException) {
                             failCount.incrementAndGet()
                         }
                     }
@@ -173,7 +175,7 @@ class ProcessRegistryImplTest {
             }
 
             val id = "test-process-list-$i"
-            val (pid, _) = registry.put(id, process)
+            val pid = registry.put(id, process)
             pids.add(pid)
         }
 
@@ -193,7 +195,7 @@ class ProcessRegistryImplTest {
         val mailbox = actor.proto.mailbox.newUnboundedMailbox()
         val process = LocalProcess(mailbox)
 
-        val (pid, _) = registry.put("test-process-dead", process)
+        val pid = registry.put("test-process-dead", process)
         registry.remove(pid)
 
         assertTrue(process.isDead(), "Process should be marked as dead")

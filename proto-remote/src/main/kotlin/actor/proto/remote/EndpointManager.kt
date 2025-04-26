@@ -1,6 +1,7 @@
 package actor.proto.remote
 
 import actor.proto.Actor
+import actor.proto.ActorSystem
 import actor.proto.Context
 import actor.proto.PID
 import actor.proto.Props
@@ -39,7 +40,7 @@ class EndpointManager(private val config: RemoteConfig) : Actor, SupervisorStrat
 
 
     private val _connections: HashMap<String, Endpoint> = HashMap()
-    suspend override fun Context.receive(msg: Any) {
+    override suspend fun Context.receive(msg: Any) {
         when (msg) {
             is Started -> logger.info("Started EndpointManager")
             is EndpointTerminatedEvent ->  ensureConnected(msg.address).watcher.let { send(it,msg) }
@@ -52,8 +53,8 @@ class EndpointManager(private val config: RemoteConfig) : Actor, SupervisorStrat
         }
     }
 
-    override fun handleFailure(supervisor: Supervisor, child: PID, rs: RestartStatistics, reason: Exception) {
-        supervisor.restartChildren(reason, child)
+    override fun handleFailure(actorSystem: ActorSystem, supervisor: Supervisor, child: PID, restartStatistics: RestartStatistics, reason: Any, message: Any?) {
+        supervisor.restartChildren(child)
     }
 
     private fun Context.ensureConnected(address: String): Endpoint = _connections.getOrPut(address, {

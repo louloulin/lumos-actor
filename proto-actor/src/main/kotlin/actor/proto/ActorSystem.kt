@@ -3,6 +3,7 @@ package actor.proto
 import actor.proto.diagnostics.Diagnostics
 import actor.proto.diagnostics.MatchType
 import actor.proto.diagnostics.ProcessInfo
+import actor.proto.guardian.GuardiansValue
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -24,6 +25,7 @@ class ActorSystem(val name: String) {
     private val hostResolvers = mutableListOf<(PID) -> Process?>()
     val scheduler = Scheduler()
     val deadLetter: Process = DeadLetterProcess
+    val guardians = GuardiansValue(this)
 
     init {
         processRegistryImpl.registerHostResolver { pid ->
@@ -69,10 +71,7 @@ class ActorSystem(val name: String) {
         val mailbox = props.mailboxProducer()
         val dispatcher = props.dispatcher
         val process = LocalProcess(mailbox)
-        val (self, success) = processRegistryImpl.put(name, process)
-        if (!success) {
-            throw ProcessNameExistException(name)
-        }
+        val self = processRegistryImpl.put(name, process)
         val ctx = ActorContext(props.producer!!, self, props.supervisorStrategy, props.receiveMiddleware, props.senderMiddleware, null)
         mailbox.registerHandlers(ctx, dispatcher)
         mailbox.postSystemMessage(Started)

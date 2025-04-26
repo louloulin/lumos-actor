@@ -1,5 +1,7 @@
 package actor.proto
 
+import actor.proto.mailbox.SystemMessage
+
 typealias PID = Protos.PID
 
 fun PID(address: String, id: String): PID {
@@ -28,4 +30,22 @@ internal fun PID.cachedProcess(registry: ProcessRegistryImpl): Process? {
 
 fun PID.toShortString(): String {
     return "$address/$id"
+}
+
+/**
+ * 发送系统消息给指定的 PID
+ * @param actorSystem Actor 系统
+ * @param message 要发送的系统消息
+ */
+fun PID.sendSystemMessage(actorSystem: ActorSystem, message: SystemMessage) {
+    val process = actorSystem.processRegistry().get(this)
+    process.sendSystemMessage(this, message)
+}
+
+/**
+ * 获取与此 PID 关联的 Actor 系统
+ * @return Actor 系统
+ */
+fun PID.actorSystem(): ActorSystem {
+    return ActorSystem.default()
 }

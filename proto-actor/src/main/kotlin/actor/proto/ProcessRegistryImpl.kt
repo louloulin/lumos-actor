@@ -67,13 +67,15 @@ class ProcessRegistryImpl(val actorSystem: ActorSystem) {
      * 注册一个进程
      * @param id 进程的 ID
      * @param process 要注册的进程
-     * @return 进程的 PID 和注册是否成功的标志
+     * @return 进程的 PID
      */
-    fun put(id: String, process: Process): Pair<PID, Boolean> {
+    fun put(id: String, process: Process): PID {
         val pid = PID(address, id)
         pid.cachedProcess_ = process // 我们知道 pid 指向哪个进程
-        val existing = processLookup.putIfAbsent(pid.id, process)
-        return Pair(pid, existing == null)
+        if (processLookup.putIfAbsent(pid.id, process) != null) {
+            throw ProcessNameExistException(id)
+        }
+        return pid
     }
 
     /**

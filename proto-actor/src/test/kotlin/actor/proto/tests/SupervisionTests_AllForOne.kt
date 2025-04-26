@@ -34,7 +34,7 @@ class SupervisionTests_AllForOne {
         lateinit var child1: PID
         lateinit var child2: PID
 
-        suspend override fun Context.receive(msg: Any) {
+        override suspend fun Context.receive(msg: Any) {
             if (msg is Started) {
                 child1 = spawnChild(_child1Props)
                 child2 = spawnChild(_child2Props)
@@ -47,7 +47,7 @@ class SupervisionTests_AllForOne {
     }
 
     class ChildActor : Actor {
-        suspend override fun Context.receive(msg: Any) {
+        override suspend fun Context.receive(msg: Any) {
             val tmp = msg
             when (tmp) {
                 is String -> {
@@ -149,6 +149,6 @@ class SupervisionTests_AllForOne {
         parentMailboxStats.reset.await(1000L, TimeUnit.MILLISECONDS)
 
         val failure = parentMailboxStats.received.filterIsInstance<Failure>().single()
-        assertEquals("boo hoo", failure.reason.message)
+        assertEquals("boo hoo", (failure.reason as Exception).message)
     }
 }

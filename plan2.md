@@ -137,9 +137,9 @@
 
 ### 3.2 中优先级任务
 
-1. **实现 Guardian Actor**
-   - 添加 Guardian Actor 实现
-   - 支持 Root、System 和 User Guardian
+1. **实现 Guardian Actor** ✅
+   - 添加 Guardian Actor 实现 ✅
+   - 支持 Root、System 和 User Guardian ✅
 
 2. **实现 PID Set**
    - 添加高效的 PID 集合实现

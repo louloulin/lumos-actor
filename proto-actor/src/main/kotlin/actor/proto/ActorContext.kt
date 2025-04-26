@@ -10,7 +10,7 @@ import java.time.Duration
 import java.util.*
 private val logger = KotlinLogging.logger {}
 class ActorContext(private val producer: () -> Actor, override val self: PID, private val supervisorStrategy: SupervisorStrategy, receiveMiddleware: List<ReceiveMiddleware>, senderMiddleware: List<SenderMiddleware>, override val parent: PID?) : MessageInvoker, Context, SenderContext, Supervisor {
-    override var children: Set<PID> = setOf()
+    private var _children: Set<PID> = setOf()
     private var watchers: Set<PID> = setOf()
     private var _receiveTimeoutTimer: AsyncTimer? = null
     private val stash: Stack<Any> by lazy(LazyThreadSafetyMode.NONE) { Stack<Any>() }
@@ -79,7 +79,7 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
 
     override fun spawnNamedChild(props: Props, name: String): PID {
         val pid = props.spawn("${self.id}/$name", self)
-        children += pid
+        _children += pid
         return pid
     }
 
@@ -137,19 +137,19 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
             sendSystemMessage(self, cont)
         }
     }
-    override fun escalateFailure(reason: Exception, who: PID) {
-        val failure = Failure(who, reason, restartStatistics)
-        sendSystemMessage(self, SuspendMailbox)
-        when (parent) {
-            null -> handleRootFailure(failure)
-            else -> sendSystemMessage(parent, failure)
-        }
+    override suspend fun escalateFailure(reason: Exception, message: Any) {
+        // 这个方法是为了兼容 MessageInvoker 接口
+        // 实际实现在 escalateFailure(reason: Any, message: Any?) 方法中
+        escalateFailure(reason, self)
     }
 
 
-    override fun restartChildren(reason: Exception, vararg pids: PID) = pids.forEach { sendSystemMessage(it, Restart(reason)) }
-    override fun stopChildren(vararg pids: PID) = pids.forEach { sendSystemMessage(it, StopInstance) }
-    override fun resumeChildren(vararg pids: PID) = pids.forEach { sendSystemMessage(it, ResumeMailbox) }
+    // 这个方法是为了兼容旧的接口
+    fun restartChildren(reason: Exception, vararg pids: PID) = pids.forEach { sendSystemMessage(it, Restart(reason)) }
+    // 这个方法是为了兼容旧的接口
+    fun stopChildren(reason: Exception, vararg pids: PID) = pids.forEach { sendSystemMessage(it, StopInstance) }
+    // 这个方法是为了兼容旧的接口
+    fun resumeChildren(reason: Exception, vararg pids: PID) = pids.forEach { sendSystemMessage(it, ResumeMailbox) }
 
     override suspend fun invokeSystemMessage(msg: SystemMessage) {
         try {
@@ -197,7 +197,56 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
         else actor.autoReceive(this)
     }
 
-    override suspend fun escalateFailure(reason: Exception, message: Any) = escalateFailure(reason, self)
+    /**
+     * 获取子 Actor 的集合
+     */
+    override val children: Set<PID>
+        get() = _children
+
+    /**
+     * 获取所有子 Actor
+     * @return 子 Actor 的集合
+     */
+    override fun children(): Set<PID> = _children
+
+    /**
+     * 将失败上报给父级
+     * @param reason 失败原因
+     * @param message 失败时处理的消息
+     */
+    override fun escalateFailure(reason: Any, message: Any?) {
+        if (parent != null) {
+            val failure = Failure(self, reason, restartStatistics, message)
+            parent.sendSystemMessage(self.actorSystem(), failure)
+        }
+    }
+
+    /**
+     * 重启指定的子 Actor
+     * @param pids 要重启的子 Actor 的 PID
+     */
+    override fun restartChildren(vararg pids: PID) {
+        pids.forEach {
+            val restart = Restart(Exception("Restarting"))
+            it.sendSystemMessage(self.actorSystem(), restart)
+        }
+    }
+
+    /**
+     * 停止指定的子 Actor
+     * @param pids 要停止的子 Actor 的 PID
+     */
+    override fun stopChildren(vararg pids: PID) {
+        pids.forEach { stop(it) }
+    }
+
+    /**
+     * 恢复指定的子 Actor
+     * @param pids 要恢复的子 Actor 的 PID
+     */
+    override fun resumeChildren(vararg pids: PID) {
+        pids.forEach { it.sendSystemMessage(self.actorSystem(), ResumeMailbox) }
+    }
 
 
     private suspend fun <T> requestAwait(target: PID, message: Any, deferredProcess: DeferredProcess<T>): T {
@@ -230,7 +279,7 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
     private suspend fun handleRestart() {
         state = ContextState.Restarting
         invokeUserMessage(Restarting)
-        children.forEach { stop(it) }
+        _children.forEach { stop(it) }
         tryRestartOrTerminate()
     }
 
@@ -250,32 +299,32 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
             when (it) {
                 is SupervisorStrategy -> it
                 else -> supervisorStrategy
-            }.handleFailure(this, msg.who, msg.restartStatistics, msg.reason)
+            }.handleFailure(self.actorSystem(), this, msg.who, msg.restartStatistics, msg.reason, msg.message)
         }
     }
 
     private suspend fun handleTerminated(msg: Terminated) {
-        children -= msg.who
+        _children -= msg.who
         invokeUserMessage(msg)
         tryRestartOrTerminate()
     }
 
     private fun handleRootFailure(failure: Failure) {
         logger.warn("Handling root failure for " + failure.who.toShortString())
-        Supervision.defaultStrategy.handleFailure(this, failure.who, failure.restartStatistics, failure.reason)
+        Supervision.defaultStrategy.handleFailure(self.actorSystem(), this, failure.who, failure.restartStatistics, failure.reason, failure.message)
     }
 
     private suspend fun handleStop() {
         state = ContextState.Stopping
         invokeUserMessage(Stopping)
-        children.forEach { stop(it) }
+        _children.forEach { stop(it) }
         tryRestartOrTerminate()
     }
 
     private suspend fun tryRestartOrTerminate() {
         cancelReceiveTimeout()
         when {
-            children.isNotEmpty() -> return
+            _children.isNotEmpty() -> return
             else -> when (state) {
                 ContextState.Restarting -> restart()
                 ContextState.Stopping -> stop()

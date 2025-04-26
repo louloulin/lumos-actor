@@ -169,7 +169,7 @@ class SupervisionTests_OneForOne {
         parentMailboxStats.reset.await(1000L, TimeUnit.MILLISECONDS)
 
         val failure = parentMailboxStats.received.filterIsInstance<Failure>().single()
-        assertEquals("boo hoo", failure.reason.message)
+        assertEquals("boo hoo", (failure.reason as Exception).message)
     }
 
     @Test

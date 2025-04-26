@@ -40,7 +40,7 @@ object Restarting
 object Stopping : AutoReceiveMessage
 object NullMessage
 
-data class Failure(val who: PID, val reason: Exception, val restartStatistics: RestartStatistics) : SystemMessage
+// Failure 类已移至 Failure.kt
 data class Restart(val reason: Exception) : SystemMessage
 data class Continuation(val action: suspend () -> Unit, val message: Any) : SystemMessage
 interface NotInfluenceReceiveTimeout
