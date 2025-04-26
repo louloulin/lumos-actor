@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -175,7 +176,7 @@ class MiddlewareTests {
 
     @Test
     fun `should log messages using logging middleware`() {
-        val logs = mutableListOf<String>()
+        val logs = Collections.synchronizedList(mutableListOf<String>())
         val system = ActorSystem.default()
         val latch = CountDownLatch(1)
 

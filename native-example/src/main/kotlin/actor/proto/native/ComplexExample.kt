@@ -5,7 +5,6 @@ import actor.proto.mailbox.newUnboundedMailbox
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,11 +33,11 @@ object Crash
 class CalculatorActor : Actor {
     private var value = 0
     
-    override suspend fun receive(context: Context) {
-        when (val msg = context.message) {
+    override suspend fun Context.receive(msg: Any) {
+        when (msg) {
             is Add -> value += msg.value
             is Subtract -> value -= msg.value
-            is GetValue -> context.send(msg.replyTo, Result(value))
+            is GetValue -> send(msg.replyTo, Result(value))
             is Reset -> value = 0
             is Divide -> {
                 if (msg.value == 0) {
@@ -54,52 +53,65 @@ class CalculatorActor : Actor {
 
 // 监督者 Actor
 class SupervisorActor : Actor {
-    private val children = ConcurrentHashMap<String, PID>()
+    // 使用可变列表存储子 Actor
+    private val childNames = mutableListOf<String>()
+    private val childPids = mutableListOf<PID>()
     private val restartCount = AtomicInteger(0)
     
-    override suspend fun receive(context: Context) {
-        when (val msg = context.message) {
+    override suspend fun Context.receive(msg: Any) {
+        when (msg) {
             is Started -> println("监督者已启动")
             
             is String -> {
                 // 创建新的计算器 Actor
-                val props = Props.fromProducer { CalculatorActor() }
+                val props = fromProducer { CalculatorActor() }
                     .withMailbox { newUnboundedMailbox() }
-                    .withChildSupervisorStrategy(OneForOneStrategy(3, Duration.ofSeconds(1)) { _, _ -> SupervisorDirective.Restart })
+                    .withChildSupervisorStrategy(OneForOneStrategy({ _, _ -> SupervisorDirective.Restart }, 3, Duration.ofSeconds(1)))
                 
-                val child = context.spawnNamed(props, msg)
-                children[msg] = child
-                context.send(context.sender, child)
+                val child = spawnNamed(props, msg)
+                childNames.add(msg)
+                childPids.add(child)
+                send(sender!!, child)
             }
             
             is Terminated -> {
                 val childId = msg.who.id
-                println("子 Actor $childId 已终止，原因: ${msg.reason}")
-                children.remove(childId)
+                println("子 Actor $childId 已终止")
+                
+                // 查找并移除终止的子 Actor
+                val index = childPids.indexOfFirst { it.id == childId }
+                if (index >= 0) {
+                    childNames.removeAt(index)
+                    childPids.removeAt(index)
+                }
+                
                 restartCount.incrementAndGet()
             }
             
             is GetValue -> {
                 // 获取所有计算器的值
                 val results = mutableMapOf<String, Int>()
-                val latch = CountDownLatch(children.size)
+                val latch = CountDownLatch(childPids.size)
                 
-                for ((name, pid) in children) {
-                    // 使用 Future 实现请求-响应模式
-                    val future = context.actorSystem.requestFuture<Result>(pid, GetValue(context.self), Duration.ofSeconds(5))
+                for (i in childNames.indices) {
+                    val name = childNames[i]
+                    val pid = childPids[i]
                     
-                    // 使用 Actor 重入，等待 Future 完成后继续处理
-                    context.reenterAfter(future) { result ->
-                        result.fold(
-                            { response -> 
-                                results[name] = response.value
-                                latch.countDown()
-                            },
-                            { error -> 
-                                println("获取 $name 的值时出错: ${error.message}")
+                    try {
+                        // 使用协程处理结果
+                        runBlocking {
+                            try {
+                                val result = ActorSystem.default().requestAsync<Result>(pid, GetValue(self), Duration.ofSeconds(5))
+                                results[name] = result.value
+                            } catch (e: Exception) {
+                                println("获取 $name 的值时出错: ${e.message}")
+                            } finally {
                                 latch.countDown()
                             }
-                        )
+                        }
+                    } catch (e: Exception) {
+                        println("创建请求时出错: ${e.message}")
+                        latch.countDown()
                     }
                 }
                 
@@ -107,7 +119,7 @@ class SupervisorActor : Actor {
                 latch.await(5, TimeUnit.SECONDS)
                 
                 // 发送结果
-                context.send(msg.replyTo, results)
+                send(msg.replyTo, results)
             }
             
             else -> println("监督者收到未知消息: ${msg.javaClass.name}")
@@ -115,71 +127,51 @@ class SupervisorActor : Actor {
     }
 }
 
-// 主函数
 fun main() {
-    println("ProtoActor Native 复杂示例")
-    println("==========================")
-    
     // 创建 Actor 系统
-    val system = ActorSystem("complex-example")
+    val system = ActorSystem("complex-native-system")
     
     // 创建监督者 Actor
-    val supervisorProps = Props.fromProducer { SupervisorActor() }
+    val supervisorProps = fromProducer { SupervisorActor() }
     val supervisor = system.actorOf(supervisorProps, "supervisor")
     
     runBlocking {
         // 创建三个计算器 Actor
-        val calc1Future = system.requestFuture<PID>(supervisor, "calculator1", Duration.ofSeconds(5))
-        val calc2Future = system.requestFuture<PID>(supervisor, "calculator2", Duration.ofSeconds(5))
-        val calc3Future = system.requestFuture<PID>(supervisor, "calculator3", Duration.ofSeconds(5))
+        val calc1 = system.requestAsync<PID>(supervisor, "calc1", Duration.ofSeconds(1))
+        val calc2 = system.requestAsync<PID>(supervisor, "calc2", Duration.ofSeconds(1))
+        val calc3 = system.requestAsync<PID>(supervisor, "calc3", Duration.ofSeconds(1))
         
-        val calc1 = calc1Future.get()
-        val calc2 = calc2Future.get()
-        val calc3 = calc3Future.get()
-        
-        println("创建了三个计算器 Actor: ${calc1.id}, ${calc2.id}, ${calc3.id}")
-        
-        // 发送操作消息
+        // 向计算器发送操作
         system.send(calc1, Add(10))
-        system.send(calc1, Add(5))
         system.send(calc2, Add(20))
-        system.send(calc2, Subtract(5))
         system.send(calc3, Add(30))
         
-        // 等待操作完成
-        delay(100)
+        system.send(calc1, Subtract(5))
+        // 这个消息类型不存在，会被忽略
+        system.send(calc2, Multiply(2))  
+        system.send(calc3, Divide(3))
+        
+        // 尝试触发错误
+        system.send(calc2, Divide(0))  // 会触发除以零错误，但会被监督者恢复
+        
+        // 等待错误恢复
+        delay(1000)
         
         // 获取所有计算器的值
-        val resultsFuture = system.requestFuture<Map<String, Int>>(supervisor, GetValue(system.deadLetter()), Duration.ofSeconds(5))
-        val results = resultsFuture.get()
+        val results = system.requestAsync<Map<String, Int>>(supervisor, GetValue(system.deadLetter()), Duration.ofSeconds(5))
         
-        println("\n计算器当前值:")
-        results.forEach { (name, value) -> println("$name: $value") }
+        println("计算器的值:")
+        results.forEach { (name, value) ->
+            println("$name: $value")
+        }
         
-        // 测试错误处理和恢复
-        println("\n测试错误处理和恢复...")
-        system.send(calc1, Divide(0)) // 将触发异常
-        
-        // 等待重启
-        delay(200)
-        
-        // 再次获取值
-        val resultsAfterErrorFuture = system.requestFuture<Map<String, Int>>(supervisor, GetValue(system.deadLetter()), Duration.ofSeconds(5))
-        val resultsAfterError = resultsAfterErrorFuture.get()
-        
-        println("\n错误后计算器值:")
-        resultsAfterError.forEach { (name, value) -> println("$name: $value") }
-        
-        // 测试崩溃
-        println("\n测试崩溃和恢复...")
-        system.send(calc2, Crash)
-        
-        // 等待重启
-        delay(200)
-        
-        // 停止所有 Actor
+        // 关闭系统
         system.stop(supervisor)
-        
-        println("\n示例完成!")
+        delay(100)
     }
+    
+    println("复杂示例完成!")
 }
+
+// 这个消息类型不存在，用于测试未知消息处理
+data class Multiply(val value: Int)

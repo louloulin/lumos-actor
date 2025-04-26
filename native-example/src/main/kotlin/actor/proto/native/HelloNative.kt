@@ -5,16 +5,15 @@ import kotlinx.coroutines.runBlocking
 
 class HelloActor : Actor {
     override suspend fun Context.receive(msg: Any) {
-        val message = context.message
-        when (message) {
+        when (msg) {
             is Started -> println("Actor started")
             is String -> {
-                println("Hello, $message!")
-                context.self.let { context.stop(it) }
+                println("Hello, $msg!")
+                self.let { stop(it) }
             }
             is Stopping -> println("Actor stopping")
             is Stopped -> println("Actor stopped")
-            else -> println("Unknown message: ${message.javaClass.name}")
+            else -> println("Unknown message: ${msg.javaClass.name}")
         }
     }
 }
