@@ -5,7 +5,16 @@ extensions.configure<ArtifactExtension> {
     name = "Proto.Actor Core"
 }
 
+plugins.withId("com.google.protobuf") {
+    configure<com.google.protobuf.gradle.ProtobufExtension> {
+        protoc {
+            artifact = "com.google.protobuf:protoc:3.17.3"
+        }
+    }
+}
+
 tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("src/main/proto") {
         include("**/*.proto")
     }

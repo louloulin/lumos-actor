@@ -59,7 +59,7 @@ class ProcessRegistryTests {
         val pid = PID("abc", "def")
         val p = TestProcess()
         val reg = ProcessRegistry
-        reg.registerHostResolver { _ -> p }
+        reg.registerHostResolver { pid -> if (pid.address == "abc") p else null }
         val p2 = reg.get(pid)
         assertSame(p, p2)
     }

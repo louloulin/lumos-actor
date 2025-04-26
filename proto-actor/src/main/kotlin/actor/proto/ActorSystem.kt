@@ -1,5 +1,8 @@
 package actor.proto
 
+import actor.proto.diagnostics.Diagnostics
+import actor.proto.diagnostics.MatchType
+import actor.proto.diagnostics.ProcessInfo
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -10,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ActorSystem(val name: String) {
     private val processRegistry = ProcessRegistry
     private val rootContext = RootContext(this)
+    private val diagnostics = Diagnostics(this)
     private val hostResolvers = mutableListOf<(PID) -> Process?>()
 
     init {
@@ -20,7 +24,7 @@ class ActorSystem(val name: String) {
                     return@registerHostResolver process
                 }
             }
-            null as Process
+            DeadLetterProcess
         }
     }
 
@@ -120,6 +124,51 @@ class ActorSystem(val name: String) {
      */
     fun registerHostResolver(resolver: (PID) -> Process?) {
         hostResolvers.add(resolver)
+    }
+
+    /**
+     * Get information about a process
+     * @param pid The PID of the process
+     * @return The process information
+     */
+    fun getProcessInfo(pid: PID): ProcessInfo {
+        return diagnostics.getProcessInfo(pid)
+    }
+
+    /**
+     * List processes matching a pattern
+     * @param pattern The pattern to match
+     * @param matchType The type of matching to perform
+     * @return The list of PIDs matching the pattern
+     */
+    fun listProcesses(pattern: String, matchType: MatchType): List<PID> {
+        return diagnostics.listProcesses(pattern, matchType)
+    }
+
+    /**
+     * Get all processes in the system
+     * @return A list of all PIDs in the system
+     */
+    fun getAllProcesses(): List<PID> {
+        return diagnostics.getAllProcesses()
+    }
+
+    /**
+     * Get detailed information about all processes matching a pattern
+     * @param pattern The pattern to match
+     * @param matchType The type of matching to perform
+     * @return A list of ProcessInfo objects for all matching processes
+     */
+    fun getProcessInfos(pattern: String, matchType: MatchType): List<ProcessInfo> {
+        return diagnostics.getProcessInfos(pattern, matchType)
+    }
+
+    /**
+     * Get detailed information about all processes in the system
+     * @return A list of ProcessInfo objects for all processes
+     */
+    fun getAllProcessInfos(): List<ProcessInfo> {
+        return diagnostics.getAllProcessInfos()
     }
 
     companion object {

@@ -12,6 +12,7 @@ import actor.proto.send
 import actor.proto.spawnNamed
 import io.grpc.Server
 import io.grpc.netty.NettyServerBuilder
+import kotlinx.coroutines.future.await
 import mu.KotlinLogging
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -34,9 +35,19 @@ object Remote {
         }
     }
 
+    var system: actor.proto.ActorSystem = actor.proto.ActorSystem.default()
+        private set
+
+
+
+
+
+
+
     fun start(hostname: String, port: Int, config: RemoteConfig = RemoteConfig()) {
         ProcessRegistry.registerHostResolver { pid -> RemoteProcess(pid) }
-        val serverBuilder = NettyServerBuilder.forPort(port).addService(EndpointReader())
+        val endpointReader = EndpointReader(this)
+        val serverBuilder = NettyServerBuilder.forPort(port).addService(endpointReader)
         config.keepAliveTime?.let { serverBuilder.permitKeepAliveTime(config.keepAliveTime / 2, TimeUnit.MILLISECONDS) }
         config.keepAliveWithoutCalls?.let { serverBuilder.permitKeepAliveWithoutCalls(config.keepAliveWithoutCalls) }
         _server = serverBuilder.build().start()

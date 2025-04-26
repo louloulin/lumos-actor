@@ -3,17 +3,20 @@ buildscript {
 
     repositories {
         mavenCentral()
+        gradlePluginPortal()
     }
 
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("com.netflix.nebula:nebula-release-plugin:20.2.0")
+        classpath("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
     }
 }
 
 plugins {
     id("com.github.ben-manes.versions") version "0.50.0"
     id("org.jetbrains.kotlin.jvm") version "1.9.20" apply false
+    id("com.google.protobuf") version "0.9.4" apply false
 }
 
 allprojects {
@@ -28,6 +31,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "kotlin")
+    apply(plugin = "com.google.protobuf")
 
     val kotlinVersion: String by rootProject.extra
     extra["coroutinesVersion"] = "1.7.3"
@@ -52,20 +56,21 @@ subprojects {
     }
 
     tasks.withType<JavaCompile> {
-        targetCompatibility = JavaVersion.VERSION_17.toString()
-        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_21.toString()
+        sourceCompatibility = JavaVersion.VERSION_21.toString()
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "17"
+            jvmTarget = "21"
             allWarningsAsErrors = false
         }
     }
 
-    tasks.withType<JavaCompile> {
-        targetCompatibility = JavaVersion.VERSION_17.toString()
-        sourceCompatibility = JavaVersion.VERSION_17.toString()
+    configure<com.google.protobuf.gradle.ProtobufExtension> {
+        protoc {
+            artifact = "com.google.protobuf:protoc:3.17.3"
+        }
     }
 
     tasks.withType<Test> {

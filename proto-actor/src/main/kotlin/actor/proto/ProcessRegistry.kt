@@ -7,12 +7,18 @@ internal typealias ProcessMap = ConcurrentHashMap<String, Process>
 
 object ProcessRegistry {
     const val noHost: String = "nonhost"
-    private val hostResolvers: MutableList<(PID) -> Process> = mutableListOf()
+    private val hostResolvers: MutableList<(PID) -> Process?> = mutableListOf()
     private val processLookup: ProcessMap = ProcessMap()
     private val sequenceId: AtomicInteger = AtomicInteger(0)
     var address: String = noHost
 
-    fun registerHostResolver(resolver: (PID) -> Process) {
+    /**
+     * Get all registered processes
+     * @return A sequence of PIDs for all registered processes
+     */
+    fun processes(): Sequence<PID> = processLookup.keys.asSequence().map { PID(address, it) }
+
+    fun registerHostResolver(resolver: (PID) -> Process?) {
         hostResolvers.add(resolver)
     }
 
@@ -27,7 +33,7 @@ object ProcessRegistry {
                 .mapNotNull { it(pid) }
                 .forEach { return it }
 
-        throw Exception("Unknown host")
+        return DeadLetterProcess
     }
 
     fun put(id: String, process: Process): PID {

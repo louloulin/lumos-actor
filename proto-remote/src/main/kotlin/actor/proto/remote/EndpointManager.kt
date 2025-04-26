@@ -9,10 +9,33 @@ import actor.proto.Started
 import actor.proto.Supervisor
 import actor.proto.SupervisorStrategy
 import actor.proto.fromProducer
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
 import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
 class EndpointManager(private val config: RemoteConfig) : Actor, SupervisorStrategy {
+    companion object {
+        private val channels = ConcurrentHashMap<String, ManagedChannel>()
+
+        /**
+         * Get or create a gRPC channel for the given address
+         * @param address The address to connect to
+         * @return The gRPC channel
+         */
+        fun getChannel(address: String): ManagedChannel {
+            return channels.getOrPut(address) {
+                val parts = address.split(":")
+                val host = parts[0]
+                val port = parts[1].toInt()
+
+                ManagedChannelBuilder.forAddress(host, port)
+                    .usePlaintext()
+                    .build()
+            }
+        }
+    }
 
 
     private val _connections: HashMap<String, Endpoint> = HashMap()
@@ -51,4 +74,3 @@ class EndpointManager(private val config: RemoteConfig) : Actor, SupervisorStrat
         return watcher
     }
 }
-
