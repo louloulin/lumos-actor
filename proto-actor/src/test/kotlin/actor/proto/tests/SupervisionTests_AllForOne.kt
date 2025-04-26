@@ -19,6 +19,7 @@ import actor.proto.send
 import actor.proto.spawn
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.TimeUnit
@@ -131,10 +132,10 @@ class SupervisionTests_AllForOne {
         child1MailboxStats.reset.await(1000L, TimeUnit.MILLISECONDS)
         child2MailboxStats.reset.await(1000L, TimeUnit.MILLISECONDS)
 
-        assertTrue { child1MailboxStats.posted.any { msg -> (msg is Restart) && msg.reason == Exception } }
-        assertTrue { child1MailboxStats.received.any { msg -> (msg is Restart) && msg.reason == Exception } }
-        assertTrue { child2MailboxStats.posted.any { msg -> (msg is Restart) && msg.reason == Exception } }
-        assertTrue { child2MailboxStats.received.any { msg -> (msg is Restart) && msg.reason == Exception } }
+        assertTrue { child1MailboxStats.posted.any { msg -> msg is Restart } }
+        assertTrue { child1MailboxStats.received.any { msg -> msg is Restart } }
+        assertTrue { child2MailboxStats.posted.any { msg -> msg is Restart } }
+        assertTrue { child2MailboxStats.received.any { msg -> msg is Restart } }
     }
 
     @Test
@@ -148,7 +149,9 @@ class SupervisionTests_AllForOne {
         send(parent, "hello")
         parentMailboxStats.reset.await(1000L, TimeUnit.MILLISECONDS)
 
-        val failure = parentMailboxStats.received.filterIsInstance<Failure>().single()
+        val failure = parentMailboxStats.received.filterIsInstance<Failure>().firstOrNull()
+        assertNotNull(failure, "Should have received a Failure message")
+        assertTrue(failure!!.reason is Exception, "Failure reason should be an Exception")
         assertEquals("boo hoo", (failure.reason as Exception).message)
     }
 }

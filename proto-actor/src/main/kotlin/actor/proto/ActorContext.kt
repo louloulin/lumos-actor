@@ -140,7 +140,10 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
     override suspend fun escalateFailure(reason: Exception, message: Any) {
         // 这个方法是为了兼容 MessageInvoker 接口
         // 实际实现在 escalateFailure(reason: Any, message: Any?) 方法中
-        escalateFailure(reason, self)
+        if (parent != null) {
+            val failure = Failure(self, reason, restartStatistics)
+            parent.sendSystemMessage(self.actorSystem(), failure)
+        }
     }
 
 
@@ -193,8 +196,15 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
             _receiveTimeoutTimer?.reset()
         }
         _message = msg
-        return if (receiveMiddleware != null) receiveMiddleware.invoke(this)
-        else actor.autoReceive(this)
+        try {
+            return if (receiveMiddleware != null) receiveMiddleware.invoke(this)
+            else actor.autoReceive(this)
+        } catch (e: Exception) {
+            // 当处理消息时抛出异常，则上报给父Actor
+            val failure = Failure(self, e, restartStatistics, msg)
+            self.sendSystemMessage(self.actorSystem(), failure)
+            throw e
+        }
     }
 
     /**
@@ -227,8 +237,7 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
      */
     override fun restartChildren(vararg pids: PID) {
         pids.forEach {
-            val restart = Restart(Exception("Restarting"))
-            it.sendSystemMessage(self.actorSystem(), restart)
+            it.sendSystemMessage(self.actorSystem(), restartMessage)
         }
     }
 
@@ -346,7 +355,7 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
     private suspend fun restart() {
         incarnateActor()
         invokeUserMessage(Started)
-        sendSystemMessage(self,ResumeMailbox)
+        sendSystemMessage(self, ResumeMailbox)
         while (stash.isNotEmpty()) invokeUserMessage(stash.pop())
     }
 
