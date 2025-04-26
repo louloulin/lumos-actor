@@ -86,9 +86,9 @@ $JAVA_HOME/bin/native-image \
   --report-unsupported-elements-at-runtime \
   -H:+ReportExceptionStackTraces \
   -H:ConfigurationFileDirectories=simple-native/build/native/config \
-  --initialize-at-build-time=org.slf4j,kotlin \
-  -cp "$CLASSPATH" \
-  actor.proto.simple.SimpleNativeKt \
+  --initialize-at-build-time=kotlin \
+  -cp "simple-native/build/classes/kotlin/main:simple-native/build/resources/main" \
+  actor.proto.simple.SimpleHelloKt \
   simple-native/build/native/proto-actor-simple
 
 # 检查构建是否成功

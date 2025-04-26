@@ -4,39 +4,26 @@ plugins {
 }
 
 application {
-    mainClass.set("actor.proto.simple.SimpleHelloKt")
+    mainClass.set("actor.proto.simple.ProtoActorExampleKt")
 }
 
 dependencies {
-    // 不依赖任何外部库
+    // ProtoActor 依赖项
+    implementation(project(":proto-actor"))
+    implementation(project(":proto-mailbox"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["coroutinesVersion"]}")
+    implementation("org.slf4j:slf4j-simple:${project.extra["slf4jVersion"]}")
 }
 
-// 创建 Native 编译任务
-tasks.register<JavaExec>("runWithAgent") {
-    group = "Native"
-    description = "使用 GraalVM Agent 运行应用程序以生成配置"
-
-    doFirst {
-        File(layout.buildDirectory.get().asFile, "native").mkdirs()
-        File(layout.buildDirectory.get().asFile, "native/config").mkdirs()
-    }
-
-    mainClass.set("actor.proto.simple.SimpleNativeKt")
-    classpath = sourceSets["main"].runtimeClasspath
-
-    jvmArgs = listOf(
-        "-agentlib:native-image-agent=config-output-dir=${layout.buildDirectory.get().asFile}/native/config",
-        "-Dorg.graalvm.nativeimage.imagecode=agent"
-    )
-}
-
-tasks.register<Exec>("compileNative") {
+// 添加 Native 编译任务
+tasks.register<Exec>("nativeCompile") {
     group = "Native"
     description = "编译 Native Image"
 
-    dependsOn("jar")
+    dependsOn("build")
 
     doFirst {
+        // 检查 GraalVM 是否安装
         val javaHome = System.getProperty("java.home")
         val nativeImageExecutable = File(javaHome, "bin/native-image")
 
@@ -44,44 +31,46 @@ tasks.register<Exec>("compileNative") {
             throw IllegalStateException("无法找到 native-image 工具。请确保安装了 GraalVM 并运行 'gu install native-image'。")
         }
 
-        val jarTask = tasks.getByName("jar")
-        val jarFile = jarTask.outputs.files.singleFile
+        // 创建目录
+        File(layout.buildDirectory.get().asFile, "native").mkdirs()
 
-        val outputDir = File(layout.buildDirectory.get().asFile, "native")
-        val outputFile = File(outputDir, "proto-actor-simple")
+        // 收集依赖项
+        val classpath = mutableListOf<String>()
+        classpath.add("${layout.buildDirectory.get().asFile}/classes/kotlin/main")
+        classpath.add("${layout.buildDirectory.get().asFile}/resources/main")
 
-        val configDir = File(layout.buildDirectory.get().asFile, "native/config")
+        // 添加项目依赖项
+        val projectDeps = configurations.runtimeClasspath.get().files
+            .filter { it.name.endsWith(".jar") }
+            .map { it.absolutePath }
+        classpath.addAll(projectDeps)
 
         // 构建命令
-        commandLine = listOfNotNull(
+        commandLine = listOf(
             nativeImageExecutable.absolutePath,
-            "-cp", jarFile.absolutePath,
-            "-H:ConfigurationFileDirectories=${configDir.absolutePath}",
             "--no-fallback",
             "--report-unsupported-elements-at-runtime",
             "-H:+ReportExceptionStackTraces",
-            "--initialize-at-build-time=org.slf4j",
-            "-o", outputFile.absolutePath,
-            "actor.proto.simple.SimpleNativeKt"
+            "--initialize-at-build-time=org.slf4j,kotlin",
+            "-cp", classpath.joinToString(":"),
+            "actor.proto.simple.ProtoActorExampleKt",
+            "-o", "${layout.buildDirectory.get().asFile}/native/proto-actor-example"
         )
-
-        // 设置工作目录
-        workingDir = projectDir
     }
 }
 
+// 运行 Native Image
 tasks.register<Exec>("runNative") {
     group = "Native"
     description = "运行 Native Image"
 
-    dependsOn("compileNative")
+    dependsOn("nativeCompile")
 
     doFirst {
-        val outputDir = File(layout.buildDirectory.get().asFile, "native")
-        val outputFile = File(outputDir, "proto-actor-simple")
+        val outputFile = File(layout.buildDirectory.get().asFile, "native/proto-actor-example")
 
         if (!outputFile.exists()) {
-            throw IllegalStateException("Native Image 不存在。请先运行 compileNative 任务。")
+            throw IllegalStateException("Native Image 不存在。请先运行 nativeCompile 任务。")
         }
 
         // 确保文件可执行
@@ -91,9 +80,10 @@ tasks.register<Exec>("runNative") {
     }
 }
 
-tasks.register("buildNative") {
+// 一键构建和运行 Native Image
+tasks.register("buildAndRunNative") {
     group = "Native"
-    description = "一键构建 Native Image（生成配置并编译）"
+    description = "构建并运行 Native Image"
 
-    dependsOn("runWithAgent", "compileNative")
+    dependsOn("runNative")
 }
