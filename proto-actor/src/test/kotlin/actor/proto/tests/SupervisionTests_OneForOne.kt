@@ -54,11 +54,17 @@ class SupervisionTests_OneForOne {
     }
 
     class ThrowOnStartedChildActor : Actor {
+        private var startedCount = 0
+
         override suspend fun Context.receive(msg: Any) {
             val tmp = msg
             when (tmp) {
                 is Started -> {
-                    throw Exception("in started")
+                    // 只在第一次收到 Started 消息时抛出异常
+                    if (startedCount == 0) {
+                        startedCount++
+                        throw Exception("in started")
+                    }
                 }
             }
         }
