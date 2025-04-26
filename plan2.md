@@ -17,7 +17,7 @@
 | Mailbox 实现 | ✅ | ✅ | 完成 | - |
 | Future/Task | ✅ | ✅ | 完成 | - |
 | Behavior 切换 | ✅ | ✅ | 完成 | - |
-| Middleware 链 | ✅ | ❌ | 缺失 | 高 |
+| Middleware 链 | ✅ | ✅ | 完成 | - |
 | Guardian Actor | ✅ | ❌ | 缺失 | 中 |
 | Message Batch | ✅ | ❌ | 缺失 | 低 |
 | PID Set | ✅ | ❌ | 缺失 | 中 |
@@ -109,10 +109,10 @@
    - 改进错误处理机制，返回结果而非抛出异常 (已实现)
    - 实现进程移除时的死亡标记 (已实现)
 
-2. **实现 Middleware 链**
-   - 添加 Middleware 接口和实现
-   - 支持 Actor、Sender 和 Receiver Middleware
-   - 提供常用 Middleware 实现（日志、恢复、度量等）
+2. **实现 Middleware 链** (已完成)
+   - 添加 Middleware 接口和实现 (已实现)
+   - 支持 Actor、Sender 和 Receiver Middleware (已实现)
+   - 提供常用 Middleware 实现（日志、恢复、度量等） (已实现)
 
 3. **实现 Metrics 系统**
    - 添加核心度量接口

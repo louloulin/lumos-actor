@@ -1,104 +1,200 @@
 package actor.proto
 
+import actor.proto.middleware.SpawnFunc
+import actor.proto.middleware.SpawnMiddleware
+import actor.proto.middleware.makeSpawnMiddlewareChain
+import actor.proto.middleware.makeSenderMiddlewareChain
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 /**
- * RootContext is the top-level context for sending messages.
- * It doesn't have an actor or parent.
+ * RootContext 是顶级 Context 实现，用于创建顶级 Actor
+ * @param actorSystem Actor 系统
  */
-class RootContext(val system: ActorSystem) : Context {
-    override val parent: PID? = null
-    override val self: PID = PID("", "")
-    override val sender: PID? = null
-    override val actor: Actor = object : Actor {
-        override suspend fun Context.receive(msg: Any) {
-            // Root context doesn't receive messages
+class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext {
+    private var _headers: Map<String, String> = mapOf()
+    private var senderMiddleware: Send? = null
+    private var spawnMiddleware: SpawnFunc? = null
+
+    /**
+     * 获取当前 Actor 的 PID
+     * @return 当前 Actor 的 PID
+     */
+    override val self: PID
+        get() = actorSystem.deadLetter()
+
+    /**
+     * 获取当前 Actor
+     * @return 当前 Actor
+     */
+    override val actor: Actor? = null
+
+    /**
+     * 获取消息
+     * @return 消息
+     */
+    override val message: Any
+        get() = NullMessage
+
+    /**
+     * 获取消息头
+     * @return 消息头
+     */
+    override val headers: MessageHeader?
+        get() = null
+
+    /**
+     * 获取发送者
+     * @return 发送者
+     */
+    override val sender: PID?
+        get() = null
+
+    /**
+     * 创建一个新的 RootContext 实例，带有指定的消息头
+     * @param headers 消息头
+     * @return 新的 RootContext 实例
+     */
+    fun withHeaders(headers: Map<String, String>): RootContext {
+        val ctx = RootContext(actorSystem)
+        ctx._headers = headers
+        ctx.senderMiddleware = this.senderMiddleware
+        ctx.spawnMiddleware = this.spawnMiddleware
+        return ctx
+    }
+
+    /**
+     * 创建一个新的 RootContext 实例，带有指定的发送中间件
+     * @param middleware 发送中间件
+     * @return 新的 RootContext 实例
+     */
+    fun withSenderMiddleware(vararg middleware: SenderMiddleware): RootContext {
+        val ctx = RootContext(actorSystem)
+        ctx._headers = this._headers
+        ctx.senderMiddleware = makeSenderMiddlewareChain(middleware.toList(), { ctx: SenderContext, target: PID, envelope: MessageEnvelope ->
+            val process = actorSystem.processRegistry().get(target)
+            process.sendUserMessage(target, envelope)
+        })
+        ctx.spawnMiddleware = this.spawnMiddleware
+        return ctx
+    }
+
+    /**
+     * 创建一个新的 RootContext 实例，带有指定的创建中间件
+     * @param middleware 创建中间件
+     * @return 新的 RootContext 实例
+     */
+    fun withSpawnMiddleware(vararg middleware: SpawnMiddleware): RootContext {
+        val ctx = RootContext(actorSystem)
+        ctx._headers = this._headers
+        ctx.senderMiddleware = this.senderMiddleware
+        ctx.spawnMiddleware = makeSpawnMiddlewareChain(middleware.toList()) { system, id, props, parentContext ->
+            system.actorOf(props, id)
         }
-    }
-    override val children: Set<PID> = emptySet()
-    override val message: Any = NullMessage
-    override val headers: MessageHeader? = null
-
-    override fun stash() {
-        throw IllegalStateException("Cannot stash in root context")
+        return ctx
     }
 
-    override fun spawnChild(props: Props): PID = system.actorOf(props)
-
-    override fun spawnPrefixChild(props: Props, prefix: String): PID {
-        val name = prefix + ProcessRegistry.nextId()
-        return spawnNamedChild(props, name)
-    }
-
-    override fun spawnNamedChild(props: Props, name: String): PID = system.actorOf(props, name)
-
-    override fun watch(pid: PID) {
-        throw IllegalStateException("Cannot watch in root context")
-    }
-
-    override fun unwatch(pid: PID) {
-        throw IllegalStateException("Cannot unwatch in root context")
-    }
-
-    override fun setReceiveTimeout(duration: Duration) {
-        throw IllegalStateException("Cannot set receive timeout in root context")
-    }
-
-    override fun getReceiveTimeout(): Duration = Duration.ZERO
-
-    override fun cancelReceiveTimeout() {
-        throw IllegalStateException("Cannot cancel receive timeout in root context")
-    }
-
+    /**
+     * 发送消息给指定的 Actor
+     * @param target 目标 Actor 的 PID
+     * @param message 消息
+     */
     override fun send(target: PID, message: Any) {
-        system.send(target, message)
-    }
-
-    override fun request(target: PID, message: Any) {
-        system.request(target, message, self)
-    }
-
-    override fun respond(message: Any) {
-        throw IllegalStateException("Cannot respond in root context")
-    }
-
-    override suspend fun <T> requestAwait(target: PID, message: Any, timeout: Duration): T {
-        val future = CompletableFuture<Any>()
-        val pid = spawnChild(
-            fromProducer {
-                object : Actor {
-                    override suspend fun Context.receive(msg: Any) {
-                        future.complete(msg)
-                        system.stop(self)
-                    }
-                }
+        when (senderMiddleware) {
+            null -> {
+                val process = actorSystem.processRegistry().get(target)
+                process.sendUserMessage(target, message)
             }
-        )
-        system.request(target, message, pid)
-
-        try {
-            @Suppress("UNCHECKED_CAST")
-            return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS) as T
-        } catch (e: Exception) {
-            system.stop(pid)
-            throw e
+            else -> {
+                val envelope = when (message) {
+                    is MessageEnvelope -> message
+                    else -> MessageEnvelope(message, null, null)
+                }
+                runBlocking { senderMiddleware!!.invoke(this@RootContext, target, envelope) }
+            }
         }
     }
 
-    override suspend fun <T> requestAwait(target: PID, message: Any): T {
-        return requestAwait(target, message, Duration.ofSeconds(5))
+    /**
+     * 发送请求给指定的 Actor
+     * @param target 目标 Actor 的 PID
+     * @param message 消息
+     */
+    override fun request(target: PID, message: Any) {
+        val envelope = MessageEnvelope(message, self, null)
+        send(target, envelope)
     }
 
-    override fun <T> requestFuture(target: PID, message: Any, timeout: Duration): Future<T> {
-        val future = Future<T>(system, timeout)
-        val messageEnvelope = MessageEnvelope(message, future.pid, null)
-        send(target, messageEnvelope)
-        return future
+    /**
+     * 创建一个新的 Actor
+     * @param props Actor 的属性
+     * @return 新 Actor 的 PID
+     */
+    override fun spawn(props: Props): PID {
+        return when (spawnMiddleware) {
+            null -> actorSystem.actorOf(props)
+            else -> spawnMiddleware!!.invoke(actorSystem, actorSystem.processRegistry().nextId(), props, this)
+        }
     }
 
-    override fun <T> reenterAfter(future: Future<T>, continuation: (T?, Throwable?) -> Unit) {
-        throw IllegalStateException("Cannot reenter in root context")
+    /**
+     * 创建一个带前缀的新 Actor
+     * @param props Actor 的属性
+     * @param prefix Actor 名称的前缀
+     * @return 新 Actor 的 PID
+     */
+    override fun spawnPrefix(props: Props, prefix: String): PID {
+        val name = prefix + actorSystem.processRegistry().nextId()
+        return spawnNamed(props, name)
+    }
+
+    /**
+     * 创建一个指定名称的新 Actor
+     * @param props Actor 的属性
+     * @param name Actor 的名称
+     * @return 新 Actor 的 PID
+     */
+    override fun spawnNamed(props: Props, name: String): PID {
+        return when (spawnMiddleware) {
+            null -> actorSystem.actorOf(props, name)
+            else -> spawnMiddleware!!.invoke(actorSystem, name, props, this)
+        }
+    }
+
+    /**
+     * 停止指定的 Actor
+     * @param pid 要停止的 Actor 的 PID
+     */
+    fun stop(pid: PID) {
+        actorSystem.stop(pid)
+    }
+
+    /**
+     * 发送毒丸消息给指定的 Actor
+     * @param pid 目标 Actor 的 PID
+     */
+    fun poison(pid: PID) {
+        actorSystem.poison(pid)
+    }
+
+    /**
+     * 发送请求并等待响应
+     * @param target 目标 Actor 的 PID
+     * @param message 消息
+     * @param timeout 超时时间
+     * @return 响应
+     */
+    suspend fun <T> requestAwait(target: PID, message: Any, timeout: Duration): T {
+        return actorSystem.requestAsync(target, message, timeout)
+    }
+
+    /**
+     * 发送请求并等待响应
+     * @param target 目标 Actor 的 PID
+     * @param message 消息
+     * @return 响应
+     */
+    suspend fun <T> requestAwait(target: PID, message: Any): T {
+        return actorSystem.requestAsync(target, message, Duration.ofSeconds(5))
     }
 }

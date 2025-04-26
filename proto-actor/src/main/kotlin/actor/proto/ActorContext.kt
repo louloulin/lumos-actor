@@ -67,9 +67,15 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
         sendUserMessage(sender!!, message)
     }
 
-    override fun spawnChild(props: Props): PID = spawnNamedChild(props, ProcessRegistry.nextId())
+    override fun spawn(props: Props): PID = spawnChild(props)
 
-    override fun spawnPrefixChild(props: Props, prefix: String): PID = spawnNamedChild(props, prefix + ProcessRegistry.nextId())
+    override fun spawnPrefix(props: Props, prefix: String): PID = spawnPrefixChild(props, prefix)
+
+    override fun spawnNamed(props: Props, name: String): PID = spawnNamedChild(props, name)
+
+    override fun spawnChild(props: Props): PID = spawnNamedChild(props, ActorSystem.default().processRegistry().nextId())
+
+    override fun spawnPrefixChild(props: Props, prefix: String): PID = spawnNamedChild(props, prefix + ActorSystem.default().processRegistry().nextId())
 
     override fun spawnNamedChild(props: Props, name: String): PID {
         val pid = props.spawn("${self.id}/$name", self)

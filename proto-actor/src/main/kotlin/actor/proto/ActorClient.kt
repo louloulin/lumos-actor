@@ -16,9 +16,15 @@ class ActorClient(messageHeader: MessageHeader = MessageHeader.EMPTY, senderMidd
     override val message: Any?
         get() = null
 
-    override val headers: MessageHeader = messageHeader
+    override val headers: MessageHeader? = messageHeader
 
-    fun send(target: PID, message: Any) {
+    override val sender: PID?
+        get() = null
+
+    override val self: PID
+        get() = ActorSystem.default().deadLetter()
+
+    override fun send(target: PID, message: Any) {
         return when (senderMiddleware) {
             null -> {
                 val process: Process = target.cachedProcess() ?: ProcessRegistry.get(target)
@@ -32,6 +38,11 @@ class ActorClient(messageHeader: MessageHeader = MessageHeader.EMPTY, senderMidd
                 }
             }
         }
+    }
+
+    override fun request(target: PID, message: Any) {
+        val envelope = MessageEnvelope(message, self, null)
+        send(target, envelope)
     }
 
     fun request(target: PID, message: Any, sender: PID) {

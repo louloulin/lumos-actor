@@ -19,7 +19,7 @@ class ActorSystem(val name: String) {
         get() = processRegistryImpl.address
 
     fun eventStream(): EventStreamImpl = EventStream
-    private val rootContext = RootContext(this)
+    val root = RootContext(this)
     private val diagnostics = Diagnostics(this)
     private val hostResolvers = mutableListOf<(PID) -> Process?>()
     val scheduler = Scheduler()
@@ -41,7 +41,7 @@ class ActorSystem(val name: String) {
      * Get the root context
      * @return The root context
      */
-    fun root(): RootContext = rootContext
+    fun root(): RootContext = root
 
     /**
      * Get the PID of the dead letter actor
@@ -127,7 +127,7 @@ class ActorSystem(val name: String) {
      * @return The response from the actor
      */
     suspend fun <T> requestAsync(pid: PID, message: Any, timeout: Duration): T {
-        return rootContext.requestAwait(pid, message, timeout)
+        return root.requestAwait(pid, message, timeout)
     }
 
     /**

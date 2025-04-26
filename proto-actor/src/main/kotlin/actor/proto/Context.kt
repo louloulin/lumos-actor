@@ -2,11 +2,16 @@ package actor.proto
 
 import java.time.Duration
 
-interface Context {
+/**
+ * Context 是 Actor 的上下文接口
+ * 提供了 Actor 与其环境交互所需的方法
+ */
+
+interface Context : SpawnerContext {
     val parent: PID?
-    val self: PID
+    override val self: PID
     val sender: PID?
-    val actor: Actor
+    override val actor: Actor
     val children: Set<PID>
     val message: Any
     val headers: MessageHeader?
