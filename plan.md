@@ -421,9 +421,10 @@ ProtoActor-Kotlin 是 Actor 模型的一个实现，具有类似的组件：
 - [x] **实现 Actor 重入支持**
   - [x] 添加 Future 类
   - [x] 实现 reenterAfter 方法
-  - [x] 添加 Continuation 消息
+  - [x] 添加 FutureContinuation 消息
   - [x] 编写单元测试
   - [x] 添加文档
+  - [x] 修复编译错误并验证功能
 
 - [x] **性能优化**
   - [x] 优化消息传递
