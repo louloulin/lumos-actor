@@ -95,3 +95,41 @@ tasks.register<Copy>("copyDependencies") {
 tasks.named("build") {
     dependsOn("copyDependencies")
 }
+
+// 创建目录用于存放反射配置
+tasks.register("createMetadataDirectory") {
+    doLast {
+        mkdir("src/main/resources/META-INF/native-image/actor.proto/proto-benchmarks")
+    }
+}
+
+// 确保在运行前创建元数据目录
+tasks.named("run") {
+    dependsOn("createMetadataDirectory")
+}
+
+// 添加任务说明
+tasks.register("nativeHelp") {
+    group = "Native Image"
+    description = "显示 Native Image 编译帮助信息"
+
+    doLast {
+        println("""
+            |=== ProtoActor Benchmarks Native Image 编译帮助 ===
+            |
+            |1. 使用 Agent 生成配置文件:
+            |   ./gradlew -Pagent=standard :proto-benchmarks:run
+            |
+            |2. 复制生成的配置文件:
+            |   ./gradlew :proto-benchmarks:metadataCopy
+            |
+            |3. 编译 Native Image:
+            |   ./gradlew :proto-benchmarks:nativeCompile
+            |
+            |4. 运行 Native Image:
+            |   ./proto-benchmarks/build/native/nativeCompile/protoactor-benchmark
+            |
+            |注意: 确保已安装 GraalVM 并设置了 JAVA_HOME 环境变量指向 GraalVM 安装目录。
+        """.trimMargin())
+    }
+}

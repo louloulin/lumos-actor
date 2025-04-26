@@ -19,6 +19,40 @@ This implementation is now compatible with ProtoActor-Go, allowing for cross-lan
 ./gradlew build
 ```
 
+## Native Image Support
+ProtoActor-Kotlin now supports GraalVM Native Image compilation, which allows you to compile your actor system into a native executable for improved startup time and reduced memory footprint.
+
+### Requirements
+- GraalVM CE 17.0.9 or later
+- Native Image tool installed (`gu install native-image`)
+
+### Building a Native Image
+We provide a convenient script to build native images:
+```
+./build-native.sh
+```
+
+This script will:
+1. Check if GraalVM is installed
+2. Run the application with the GraalVM agent to generate configuration files
+3. Compile the native image
+4. Run the generated native executable
+
+You can also use Gradle directly:
+```
+# Run with agent to generate configuration
+./gradlew -Pagent=standard :native-example:run
+
+# Copy generated configuration
+./gradlew :native-example:metadataCopy
+
+# Compile native image
+./gradlew :native-example:nativeCompile
+
+# Run the native executable
+./native-example/build/native/nativeCompile/proto-actor-native
+```
+
 ## Design principles
 
 **Minimalistic API** - The API should be small and easy to use. Avoid enterprisey containers and configurations.
@@ -53,6 +87,8 @@ The best place currently for learning how to use Proto.Actor is the [examples](h
 For information about the compatibility implementation, see the following documentation:
 - [Implementation Documentation](docs/implementation.md)
 - [Remote Communication](docs/remote.md)
+- [Native Image Support](docs/native-image.md)
+- [Simplified Native Image Building](docs/simple-native.md)
 
 
 ### Hello world

@@ -35,37 +35,22 @@
     "allPublicMethods": true
   },
   {
-    "name": "actor.proto.benchmarks.local.MailboxBenchmark",
-    "allDeclaredFields": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true,
+    "name": "actor.proto.benchmarks.simple.SimpleBenchmarkKt",
     "methods": [
-      { "name": "main", "parameterTypes": ["java.lang.String[]"] }
+      { "name": "main", "parameterTypes": [] }
     ]
   },
   {
-    "name": "actor.proto.benchmarks.local.MailboxBenchmark$CounterActor",
+    "name": "actor.proto.benchmarks.simple.CounterActor",
     "allDeclaredFields": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true
   },
   {
-    "name": "org.openjdk.jmh.Main",
+    "name": "actor.proto.benchmarks.simple.StartMessage",
     "allDeclaredFields": true,
     "allDeclaredMethods": true,
-    "allPublicMethods": true,
-    "methods": [
-      { "name": "main", "parameterTypes": ["java.lang.String[]"] }
-    ]
-  },
-  {
-    "name": "org.openjdk.jmh.runner.ForkedMain",
-    "allDeclaredFields": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true,
-    "methods": [
-      { "name": "main", "parameterTypes": ["java.lang.String[]"] }
-    ]
+    "allPublicMethods": true
   },
   {
     "name": "kotlin.coroutines.jvm.internal.BaseContinuationImpl",
