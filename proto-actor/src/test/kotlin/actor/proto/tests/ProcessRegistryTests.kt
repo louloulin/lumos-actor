@@ -59,7 +59,16 @@ class ProcessRegistryTests {
         val pid = PID("abc", "def")
         val p = TestProcess()
         val reg = ProcessRegistry
-        reg.registerHostResolver { pid -> if (pid.address == "abc") p else null }
+
+        // Clear any existing host resolvers
+        val field = ProcessRegistry::class.java.getDeclaredField("hostResolvers")
+        field.isAccessible = true
+        val hostResolvers = field.get(reg) as MutableList<*>
+        hostResolvers.clear()
+
+        // Register our test resolver
+        reg.registerHostResolver { testPid -> if (testPid.address == "abc") p else null }
+
         val p2 = reg.get(pid)
         assertSame(p, p2)
     }

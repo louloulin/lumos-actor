@@ -11,6 +11,7 @@ import actor.proto.fromProducer
 import actor.proto.remote.Remote
 import actor.proto.remote.Serialization.registerFileDescriptor
 import actor.proto.spawnNamed
+import actor.proto.Protos
 
 private val start: Start = Start.newBuilder().build()
 private val pong: Pong = Pong.newBuilder().build()
@@ -31,7 +32,9 @@ class EchoActor : Actor {
             is Started -> println("Started")
             is Messages.StartRemote -> {
                 println("Start remote")
-                this@EchoActor._sender = msg.sender
+                // Convert ActorProtos.PID to Protos.PID
+                val sender = msg.sender
+                this@EchoActor._sender = PID(sender.address, sender.id)
                 respond(start)
             }
             is Messages.Ping -> {

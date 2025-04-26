@@ -3,6 +3,7 @@ package actor.proto.remote
 import actor.proto.Actor
 import actor.proto.Context
 import actor.proto.EventStream
+import actor.proto.PID
 import actor.proto.Restarting
 import actor.proto.Started
 import actor.proto.Stopped
@@ -55,8 +56,8 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
                 }
                 val batch = RemoteProtos.MessageBatch
                         .newBuilder()
-                        .addAllTargetNames(targetNameList)
                         .addAllTypeNames(typeNameList)
+                        .addAllTargetNames(targetNameList)
                         .addAllEnvelopes(envelopes)
                         .build()
                 sendEnvelopesAsync(batch)
@@ -89,10 +90,10 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
         channel = channelBuilder.build()
         client = RemotingGrpc.newStub(channel)
         val blockingClient = RemotingGrpc.newBlockingStub(channel)
-        val res = blockingClient.connect(ConnectRequest())
-        serializerId = res.defaultSerializerId
+        val res = blockingClient.connect(RemoteProtos.ConnectRequest.newBuilder().build())
+        serializerId = Serialization.defaultSerializerId
         streamWriter = client.receive(object : StreamObserver<RemoteProtos.Unit> {
-            override fun onNext(value: RemoteProtos.Unit?) {
+            override fun onNext(value: RemoteProtos.Unit) {
                 //never called
             }
 

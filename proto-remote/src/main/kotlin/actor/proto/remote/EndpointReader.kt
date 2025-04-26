@@ -1,5 +1,6 @@
 package actor.proto.remote
 
+import actor.proto.MessageEnvelope
 import actor.proto.PID
 import actor.proto.ProcessRegistry
 import actor.proto.Terminated
@@ -21,37 +22,47 @@ class EndpointReader(private val remote: Remote? = null) : RemotingGrpc.Remoting
         responseObserver.onCompleted()
     }
 
-    override fun receive(responseObserver: StreamObserver<RemoteProtos.RemoteMessage>): StreamObserver<RemoteProtos.RemoteMessage> {
-        return object : StreamObserver<RemoteProtos.RemoteMessage> {
+    override fun receive(responseObserver: StreamObserver<RemoteProtos.Unit>): StreamObserver<RemoteProtos.MessageBatch> {
+        return object : StreamObserver<RemoteProtos.MessageBatch> {
             override fun onCompleted() = responseObserver.onCompleted()
             override fun onError(err: Throwable): Unit = logger.error("Stream observer exception",err)
-            override fun onNext(message: RemoteProtos.RemoteMessage) {
-                if (message.hasMessageBatch()) {
-                    receiveBatch(message.messageBatch)
-                }
+            override fun onNext(batch: RemoteProtos.MessageBatch) {
+                receiveBatch(batch)
             }
         }
     }
 
     fun receiveBatch(batch: RemoteProtos.MessageBatch) {
-        val targetNames = batch.targetNamesList
         val typeNames = batch.typeNamesList
+        val targetNames = batch.targetNamesList
+        val senders = batch.sendersList
 
         for (envelope in batch.envelopesList) {
-            val targetName: String = targetNames[envelope.target]
-            val target: PID = PID(ProcessRegistry.address, targetName)
-            val typeName: String = typeNames[envelope.typeId]
-            val message: Any = Serialization.deserialize(typeName, envelope.messageData, envelope.serializerId)
+            val targetName = targetNames[envelope.target]
+            val typeName = typeNames[envelope.typeId]
+            val message = Serialization.deserialize(typeName, envelope.messageData, envelope.serializerId)
+
+            // Create PID from target name
+            val target = PID(ProcessRegistry.address, targetName)
+
+            val sender = if (envelope.sender >= 0 && envelope.sender < senders.size) {
+                senders[envelope.sender]
+            } else null
+
             when (message) {
-                is Terminated -> send(Remote.endpointManagerPid, RemoteTerminate(target, message.who))
-                is SystemMessage -> sendSystemMessage(target,message)
+                is Terminated -> {
+                    // Convert ActorProtos.PID to Protos.PID
+                    val who = PID(message.who.address, message.who.id)
+                    send(Remote.endpointManagerPid, RemoteTerminate(target, who))
+                }
+                is SystemMessage -> sendSystemMessage(target, message)
                 else -> {
-                    when {
-                        envelope.hasSender() -> {
-                            val sender: PID = envelope.sender
-                            request(target, message, sender)
-                        }
-                        else -> send(target, message)
+                    if (sender != null) {
+                        // Convert ActorProtos.PID to Protos.PID
+                        val senderPid = PID(sender.address, sender.id)
+                        request(target, message, senderPid)
+                    } else {
+                        send(target, message)
                     }
                 }
             }

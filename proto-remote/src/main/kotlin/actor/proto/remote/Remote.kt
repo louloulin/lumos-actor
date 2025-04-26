@@ -84,7 +84,9 @@ object Remote {
         val activator: PID = activatorForAddress(address)
         val req = ActorPidRequest(kind, name)
         val res = requestAwait<RemoteProtos.ActorPidResponse>(activator, req, timeout)
-        return res.pid
+        // Convert the ActorProtos.PID to Protos.PID
+        val pid = res.pid
+        return PID(pid.address, pid.id)
     }
 
     fun sendMessage(pid: PID, msg: Any, serializerId: Int) {

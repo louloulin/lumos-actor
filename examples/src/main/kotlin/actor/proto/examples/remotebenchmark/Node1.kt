@@ -11,6 +11,7 @@ import actor.proto.remote.Serialization.registerFileDescriptor
 import actor.proto.requestAwait
 import actor.proto.send
 import actor.proto.spawn
+import actor.proto.ActorProtos
 import kotlinx.coroutines.runBlocking
 import java.lang.System.currentTimeMillis
 import java.time.Duration
@@ -34,7 +35,9 @@ private fun run() {
     val props = fromProducer { LocalActor(0, messageCount, wg) }
     val pid: PID = spawn(props)
     val remote = PID("127.0.0.1:12000", "remote")
-    val startRemote = Messages.StartRemote.newBuilder().setSender(pid).build()
+    // Convert PID to ActorProtos.PID
+    val protoPid = ActorProtos.PID.newBuilder().setAddress(pid.address).setId(pid.id).build()
+    val startRemote = Messages.StartRemote.newBuilder().setSender(protoPid).build()
 
     runBlocking {
         requestAwait<Messages.Start>(remote, startRemote, Duration.ofSeconds(2))
