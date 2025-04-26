@@ -6,6 +6,9 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.the
+import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 buildscript {
     val kotlinVersion by extra("1.9.22")
@@ -92,6 +95,12 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+
+        // Configure JVM arguments for tests
+        jvmArgs = listOf(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.util=ALL-UNNAMED"
+        )
     }
 }
 
@@ -100,7 +109,17 @@ configure(subprojects.filter { it.name != "examples" }) {
     apply(plugin = "jacoco")
 
     configure<JacocoPluginExtension> {
-        toolVersion = "0.8.11"
+        // Update to latest version that supports Java 23
+        toolVersion = "0.8.12"
+    }
+
+    // Configure Java toolchain for all subprojects
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(17))
+            }
+        }
     }
 
     tasks.register<Jar>("sourcesJar") {
