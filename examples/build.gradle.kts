@@ -1,6 +1,7 @@
 plugins {
     application
     java
+    id("org.graalvm.buildtools.native")
 }
 
 application {
@@ -17,4 +18,20 @@ dependencies {
     add("implementation", project(":proto-router"))
     add("implementation", project(":proto-remote"))
     add("implementation", project(":proto-mailbox"))
+}
+
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("protoactor-example")
+            mainClass.set("actor.proto.examples.helloworld.HelloWorldKt")
+            buildArgs.add("--no-fallback")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+            buildArgs.add("-H:+PrintClassInitialization")
+        }
+    }
+    metadataRepository {
+        enabled.set(true)
+    }
 }

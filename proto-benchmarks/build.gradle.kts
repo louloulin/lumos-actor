@@ -1,6 +1,14 @@
 plugins {
     kotlin("jvm")
     id("me.champeau.jmh") version "0.7.1"
+    id("org.graalvm.buildtools.native") version "0.10.1"
+    application
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 dependencies {
@@ -42,4 +50,36 @@ jmh {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("actor.proto.benchmarks.local.MailboxBenchmark")
+}
+
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("protoactor-benchmark")
+            mainClass.set("actor.proto.benchmarks.local.MailboxBenchmark")
+            buildArgs.add("--no-fallback")
+            buildArgs.add("--report-unsupported-elements-at-runtime")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+            buildArgs.add("-H:+PrintClassInitialization")
+            buildArgs.add("--initialize-at-build-time=org.slf4j,ch.qos.logback")
+            buildArgs.add("--initialize-at-run-time=io.grpc,io.netty")
+        }
+    }
+    metadataRepository {
+        enabled.set(true)
+    }
+}
+
+// Task to copy all dependencies to a directory for native image building
+tasks.register<Copy>("copyDependencies") {
+    from(configurations.runtimeClasspath)
+    into("${buildDir}/dependencies")
+}
+
+tasks.named("build") {
+    dependsOn("copyDependencies")
 }

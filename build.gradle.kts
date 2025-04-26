@@ -26,6 +26,7 @@ plugins {
     id("com.github.ben-manes.versions") version "0.50.0"
     id("org.jetbrains.kotlin.jvm") version "1.9.22" apply false
     id("com.google.protobuf") version "0.9.4" apply false
+    id("org.graalvm.buildtools.native") version "0.10.1" apply false
 }
 
 allprojects {

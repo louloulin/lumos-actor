@@ -112,4 +112,12 @@ open class MailboxBenchmark {
 
     data class StartMessage(val count: Int, val latch: CountDownLatch)
     object IncrementMessage
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            // Run the benchmark using JMH
+            org.openjdk.jmh.Main.main(args)
+        }
+    }
 }
