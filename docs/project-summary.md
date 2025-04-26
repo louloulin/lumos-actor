@@ -69,6 +69,12 @@ The goal of this project was to redesign ProtoActor-Kotlin to be compatible with
   - Implemented location transparency
   - Added state persistence
 
+- **Implemented Reentrancy Support**
+  - Added Future class for asynchronous operations
+  - Implemented reenterAfter method in Context interface
+  - Added Continuation message for resuming actor processing
+  - Created comprehensive documentation and tests
+
 - **Performance Optimization**
   - Optimized message passing
   - Reduced memory usage

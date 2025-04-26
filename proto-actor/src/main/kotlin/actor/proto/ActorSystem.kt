@@ -20,6 +20,7 @@ class ActorSystem(val name: String) {
     private val rootContext = RootContext(this)
     private val diagnostics = Diagnostics(this)
     private val hostResolvers = mutableListOf<(PID) -> Process?>()
+    val scheduler = Scheduler()
 
     init {
         processRegistry.registerHostResolver { pid ->

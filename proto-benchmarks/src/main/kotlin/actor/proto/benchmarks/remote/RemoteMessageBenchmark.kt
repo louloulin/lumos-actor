@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Benchmark for remote actor messaging.
- * 
+ *
  * Note: This benchmark requires two separate JVM processes to run.
  * One process should run the server, and the other should run the benchmark.
  */
@@ -38,35 +38,35 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 5, time = 1)
 @Fork(2)
 open class RemoteMessageBenchmark {
-    
+
     private lateinit var system: ActorSystem
     private lateinit var remote: Remote
     private lateinit var pingActor: PID
     private lateinit var remotePID: PID
-    
+
     @Setup(Level.Trial)
     fun setup() {
         system = ActorSystem("benchmark-client")
-        
+
         // Configure remote
         val remoteConfig = RemoteConfig.create("localhost", 8090)
         remote = Remote.create(system, remoteConfig)
-        remote.start()
-        
+        remote.start("localhost", 8090)
+
         // Create ping actor
         val pingProps = fromProducer { PingActor() }
         pingActor = system.actorOf(pingProps)
-        
+
         // Create remote PID
         remotePID = PID("localhost:8091", "echo")
     }
-    
+
     @TearDown(Level.Trial)
     fun teardown() {
         system.stop(pingActor)
         remote.shutdown(true)
     }
-    
+
     @Benchmark
     fun pingPong(bh: Blackhole) {
         val latch = CountDownLatch(1)
@@ -74,7 +74,7 @@ open class RemoteMessageBenchmark {
         latch.await(5, TimeUnit.SECONDS)
         bh.consume(latch)
     }
-    
+
     @Benchmark
     fun throughput(bh: Blackhole) {
         val count = 1000
@@ -83,7 +83,7 @@ open class RemoteMessageBenchmark {
         latch.await(30, TimeUnit.SECONDS)
         bh.consume(latch)
     }
-    
+
     class PingActor : Actor {
         override suspend fun Context.receive(msg: Any) {
             when (msg) {
@@ -94,17 +94,17 @@ open class RemoteMessageBenchmark {
                 is ThroughputMessage -> {
                     val count = msg.count
                     val target = msg.target
-                    
+
                     for (i in 0 until count) {
                         send(target, "message-$i")
                     }
-                    
+
                     msg.latch.countDown()
                 }
             }
         }
     }
-    
+
     data class PingMessage(val target: PID, val latch: CountDownLatch)
     data class ThroughputMessage(val target: PID, val count: Int, val latch: CountDownLatch)
 }
@@ -116,24 +116,24 @@ object RemoteBenchmarkServer {
     @JvmStatic
     fun main(args: Array<String>) {
         val system = ActorSystem("benchmark-server")
-        
+
         // Configure remote
         val remoteConfig = RemoteConfig.create("localhost", 8091)
         val remote = Remote.create(system, remoteConfig)
-        
+
         // Create echo actor
         val echoProps = fromProducer { EchoActor() }
         system.actorOf(echoProps, "echo")
-        
+
         // Start remote
-        remote.start()
-        
+        remote.start("localhost", 8091)
+
         println("Remote benchmark server started at localhost:8091")
-        
+
         // Keep the server running
         Thread.sleep(Long.MAX_VALUE)
     }
-    
+
     class EchoActor : Actor {
         override suspend fun Context.receive(msg: Any) {
             // Just echo the message back

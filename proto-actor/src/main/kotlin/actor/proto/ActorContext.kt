@@ -113,13 +113,24 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
 
     override suspend fun <T> requestAwait(target: PID, message: Any): T = requestAwait(target, message, DeferredProcess())
 
-    //    override fun reenterAfter (target : Task, action : (Task) -> Task) {
-//        val msg : Any = _message!!
-//        val cont : Continuation = Continuation({ action(target) }, msg)
-//        target.continueWith{t ->
-//            self.sendSystemMessage(cont)
-//        }
-//    }
+    override fun <T> requestFuture(target: PID, message: Any, timeout: Duration): Future<T> {
+        val system = ActorSystem.default() // TODO: Get the actual system from context
+        val future = Future<T>(system, timeout)
+        val messageEnvelope = MessageEnvelope(message, future.pid, null)
+        sendUserMessage(target, messageEnvelope)
+        return future
+    }
+
+    override fun <T> reenterAfter(future: Future<T>, continuation: (T?, Throwable?) -> Unit) {
+        val msg = _message
+        future.continueWith { result, error ->
+            val cont = FutureContinuation(
+                { continuation(result, error) },
+                msg
+            )
+            sendSystemMessage(self, cont)
+        }
+    }
     override fun escalateFailure(reason: Exception, who: PID) {
         val failure = Failure(who, reason, restartStatistics)
         sendSystemMessage(self, SuspendMailbox)
@@ -144,11 +155,20 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
                 is Unwatch -> handleUnwatch(msg)
                 is Failure -> handleFailure(msg)
                 is Restart -> handleRestart()
+                is FutureContinuation -> {
+                    _message = msg.message // Restore the message that was present when we started the await
+                    msg.function() // Invoke the continuation in the current actor context
+                    _message = NullMessage // Reset the message
+                }
+                is Continuation -> {
+                    _message = msg.message // Restore the message that was present when we started the await
+                    msg.action() // Invoke the continuation in the current actor context
+                    _message = NullMessage // Reset the message
+                }
                 is SuspendMailbox -> {
                 }
                 is ResumeMailbox -> {
                 }
-                is Continuation -> handleContinuation(msg)
                 else -> throw Exception("Unknown system message")
             }
         } catch (x: Exception) {

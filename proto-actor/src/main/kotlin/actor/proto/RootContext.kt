@@ -90,4 +90,15 @@ class RootContext(val system: ActorSystem) : Context {
     override suspend fun <T> requestAwait(target: PID, message: Any): T {
         return requestAwait(target, message, Duration.ofSeconds(5))
     }
+
+    override fun <T> requestFuture(target: PID, message: Any, timeout: Duration): Future<T> {
+        val future = Future<T>(system, timeout)
+        val messageEnvelope = MessageEnvelope(message, future.pid, null)
+        send(target, messageEnvelope)
+        return future
+    }
+
+    override fun <T> reenterAfter(future: Future<T>, continuation: (T?, Throwable?) -> Unit) {
+        throw IllegalStateException("Cannot reenter in root context")
+    }
 }

@@ -26,6 +26,23 @@ interface Context {
 
     suspend fun <T> requestAwait(target: PID, message: Any, timeout: Duration): T
     suspend fun <T> requestAwait(target: PID, message: Any): T
-    // fun reenterAfter (target : Task, action : (Task) -> Task)
+
+    /**
+     * Request a value from a target PID and return a Future.
+     * @param target The target PID
+     * @param message The message to send
+     * @param timeout The timeout duration
+     * @return A Future that will complete with the response
+     */
+    fun <T> requestFuture(target: PID, message: Any, timeout: Duration): Future<T>
+
+    /**
+     * Reenter the actor after the future completes.
+     * This allows an actor to pause processing while waiting for a future to complete,
+     * and then resume processing with the result of the future.
+     * @param future The future to wait for
+     * @param continuation The function to call when the future completes
+     */
+    fun <T> reenterAfter(future: Future<T>, continuation: (T?, Throwable?) -> Unit)
 }
 
