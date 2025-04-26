@@ -12,7 +12,7 @@
 | Context 实现 | ✅ | ✅ | 完成 | - |
 | PID | ✅ | ✅ | 完成 | - |
 | Props | ✅ | ✅ | 完成 | - |
-| Process Registry | ✅ | ⚠️ | 需优化 | 高 |
+| Process Registry | ✅ | ✅ | 完成 | - |
 | Supervision 策略 | ✅ | ✅ | 完成 | - |
 | Mailbox 实现 | ✅ | ✅ | 完成 | - |
 | Future/Task | ✅ | ✅ | 完成 | - |
@@ -102,12 +102,12 @@
 
 ### 3.1 高优先级任务
 
-1. **优化 Process Registry**
-   - 实现分片存储，减少锁竞争
-   - 改进 ID 生成算法，使用更高效的 base64 编码
-   - 将 ProcessRegistry 与 ActorSystem 关联，支持多实例
-   - 改进错误处理机制，返回结果而非抛出异常
-   - 实现进程移除时的死亡标记
+1. **优化 Process Registry** (已完成)
+   - 实现分片存储，减少锁竞争 (已实现)
+   - 改进 ID 生成算法，使用更高效的 base64 编码 (已实现)
+   - 将 ProcessRegistry 与 ActorSystem 关联，支持多实例 (已实现)
+   - 改进错误处理机制，返回结果而非抛出异常 (已实现)
+   - 实现进程移除时的死亡标记 (已实现)
 
 2. **实现 Middleware 链**
    - 添加 Middleware 接口和实现
@@ -198,7 +198,7 @@
 ## 4. 实施时间表
 
 ### 第一阶段（1-3个月）
-- 优化 Process Registry
+- 优化 Process Registry (已完成)
 - 实现 Middleware 链
 - 实现 Metrics 系统
 - 提高测试覆盖率
@@ -336,15 +336,15 @@ fun remove(pid: PID) {
 }
 ```
 
-### 5.3 实现计划
+### 5.3 实现计划 (已完成)
 
-1. 创建 ShardedProcessMap 类，实现分片存储
-2. 实现高效的 ID 生成算法
-3. 将 ProcessRegistry 改为类，与 ActorSystem 关联
-4. 改进错误处理机制，返回结果而非抛出异常
-5. 为 ActorProcess 添加 dead 标志，并在移除时设置
-6. 更新相关的测试用例
-7. 更新文档
+1. 创建 ShardedProcessMap 类，实现分片存储 (已实现)
+2. 实现高效的 ID 生成算法 (已实现)
+3. 将 ProcessRegistry 改为类，与 ActorSystem 关联 (已实现)
+4. 改进错误处理机制，返回结果而非抛出异常 (已实现)
+5. 为 ActorProcess 添加 dead 标志，并在移除时设置 (已实现)
+6. 更新相关的测试用例 (已实现)
+7. 更新文档 (已实现)
 
 ## 6. 结论
 

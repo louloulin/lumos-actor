@@ -4,6 +4,7 @@
 package actor.proto
 
 import actor.proto.mailbox.SystemMessage
+import java.time.Duration
 
 @JvmSynthetic
 fun fromProducer(producer: () -> Actor): Props = Props().withProducer(producer)
@@ -16,23 +17,29 @@ fun fromFunc(receive: suspend Context.(msg: Any) -> Unit): Props = fromProducer 
 }
 
 fun spawn(props: Props): PID {
-    val name = ProcessRegistry.nextId()
-    return spawnNamed(props, name)
+    return ActorSystem.default().actorOf(props)
 }
 
 fun spawnPrefix(props: Props, prefix: String): PID {
-    val name = prefix + ProcessRegistry.nextId()
+    val name = prefix + ActorSystem.default().processRegistry().nextId()
     return spawnNamed(props, name)
 }
 
-fun spawnNamed(props: Props, name: String): PID = props.spawn(name, null)
+fun spawnNamed(props: Props, name: String): PID = ActorSystem.default().actorOf(props, name)
 
 fun stop(pid: PID) {
-    val process = pid.cachedProcess() ?: ProcessRegistry.get(pid)
-    process.stop(pid)
+    ActorSystem.default().stop(pid)
 }
 
 fun sendSystemMessage(pid: PID, sys: SystemMessage) {
-    val process: Process = pid.cachedProcess() ?: ProcessRegistry.get(pid)
+    val process: Process = pid.cachedProcess() ?: ActorSystem.default().processRegistry().get(pid)
     process.sendSystemMessage(pid, sys)
 }
+
+// 全局 send 函数已移至 ActorSystem.default().send
+
+// 全局 request 函数已移至 ActorSystem.default().request
+
+// 全局 requestAwait 函数已移至 ActorSystem.default().requestAsync
+
+// 全局 poison 函数已移至 ActorSystem.default().poison

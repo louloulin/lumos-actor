@@ -63,7 +63,7 @@ class Diagnostics(private val system: ActorSystem) {
      * @return The process information
      */
     fun getProcessInfo(pid: PID): ProcessInfo {
-        val process = ProcessRegistry.get(pid)
+        val process = system.processRegistry().get(pid)
         return when (process) {
             is LocalProcess -> {
                 val mailbox = getMailbox(process)
@@ -106,7 +106,7 @@ class Diagnostics(private val system: ActorSystem) {
             MatchType.MATCH_REGEX -> Pattern.compile(pattern)
         }
 
-        return ProcessRegistry.processes()
+        return system.processRegistry().processes()
             .filter { regex.matcher(it.id).matches() }
             .toList()
     }
@@ -116,7 +116,7 @@ class Diagnostics(private val system: ActorSystem) {
      * @return A list of all PIDs in the system
      */
     fun getAllProcesses(): List<PID> {
-        return ProcessRegistry.processes().toList()
+        return system.processRegistry().processes().toList()
     }
 
     /**

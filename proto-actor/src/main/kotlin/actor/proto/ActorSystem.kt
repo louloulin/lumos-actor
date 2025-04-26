@@ -5,6 +5,7 @@ import actor.proto.diagnostics.MatchType
 import actor.proto.diagnostics.ProcessInfo
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.future.await
 
 /**
@@ -12,25 +13,27 @@ import kotlinx.coroutines.future.await
  * It provides methods for creating, finding, and managing actors.
  */
 class ActorSystem(val name: String) {
+    private val processRegistryImpl = ProcessRegistryImpl(this)
+
     val address: String
-        get() = ProcessRegistry.address
+        get() = processRegistryImpl.address
 
     fun eventStream(): EventStreamImpl = EventStream
-    private val processRegistry = ProcessRegistry
     private val rootContext = RootContext(this)
     private val diagnostics = Diagnostics(this)
     private val hostResolvers = mutableListOf<(PID) -> Process?>()
     val scheduler = Scheduler()
+    val deadLetter: Process = DeadLetterProcess
 
     init {
-        processRegistry.registerHostResolver { pid ->
+        processRegistryImpl.registerHostResolver { pid ->
             hostResolvers.forEach { resolver ->
                 val process = resolver(pid)
                 if (process != null) {
                     return@registerHostResolver process
                 }
             }
-            DeadLetterProcess
+            deadLetter
         }
     }
 
@@ -44,7 +47,7 @@ class ActorSystem(val name: String) {
      * Get the PID of the dead letter actor
      * @return The PID of the dead letter actor
      */
-    fun deadLetter(): PID = PID(ProcessRegistry.address, "deadletter")
+    fun deadLetter(): PID = PID(processRegistryImpl.address, "deadletter")
 
     /**
      * Create a new actor with the given props and a generated ID
@@ -52,7 +55,7 @@ class ActorSystem(val name: String) {
      * @return The PID of the new actor
      */
     fun actorOf(props: Props): PID {
-        val name = processRegistry.nextId()
+        val name = processRegistryImpl.nextId()
         return actorOf(props, name)
     }
 
@@ -66,7 +69,10 @@ class ActorSystem(val name: String) {
         val mailbox = props.mailboxProducer()
         val dispatcher = props.dispatcher
         val process = LocalProcess(mailbox)
-        val self = ProcessRegistry.put(name, process)
+        val (self, success) = processRegistryImpl.put(name, process)
+        if (!success) {
+            throw ProcessNameExistException(name)
+        }
         val ctx = ActorContext(props.producer!!, self, props.supervisorStrategy, props.receiveMiddleware, props.senderMiddleware, null)
         mailbox.registerHandlers(ctx, dispatcher)
         mailbox.postSystemMessage(Started)
@@ -79,7 +85,7 @@ class ActorSystem(val name: String) {
      * @param pid The PID of the actor to stop
      */
     fun stop(pid: PID) {
-        val process = processRegistry.get(pid)
+        val process = processRegistryImpl.get(pid)
         process.stop(pid)
     }
 
@@ -97,7 +103,7 @@ class ActorSystem(val name: String) {
      * @param message The message to send
      */
     fun send(pid: PID, message: Any) {
-        val process = processRegistry.get(pid)
+        val process = processRegistryImpl.get(pid)
         process.sendUserMessage(pid, message)
     }
 
@@ -108,7 +114,7 @@ class ActorSystem(val name: String) {
      * @param sender The PID of the sender
      */
     fun request(pid: PID, message: Any, sender: PID) {
-        val process = processRegistry.get(pid)
+        val process = processRegistryImpl.get(pid)
         val envelope = MessageEnvelope(message, sender)
         process.sendUserMessage(pid, envelope)
     }
@@ -131,6 +137,12 @@ class ActorSystem(val name: String) {
     fun registerHostResolver(resolver: (PID) -> Process?) {
         hostResolvers.add(resolver)
     }
+
+    /**
+     * 获取进程注册表实现
+     * @return 进程注册表实现
+     */
+    fun processRegistry(): ProcessRegistryImpl = processRegistryImpl
 
     /**
      * Get information about a process
@@ -179,6 +191,22 @@ class ActorSystem(val name: String) {
 
     companion object {
         private val systems = ConcurrentHashMap<String, ActorSystem>()
+        private val defaultSystemRef = AtomicReference<ActorSystem>(null)
+
+        /**
+         * 获取默认的 ActorSystem 实例
+         * @return 默认的 ActorSystem 实例
+         */
+        fun default(): ActorSystem {
+            var system = defaultSystemRef.get()
+            if (system == null) {
+                system = ActorSystem("default")
+                if (!defaultSystemRef.compareAndSet(null, system)) {
+                    system = defaultSystemRef.get()
+                }
+            }
+            return system
+        }
 
         /**
          * Get or create an ActorSystem with the given name
@@ -189,10 +217,6 @@ class ActorSystem(val name: String) {
             return systems.getOrPut(name) { ActorSystem(name) }
         }
 
-        /**
-         * Get the default ActorSystem
-         * @return The default ActorSystem
-         */
-        fun default(): ActorSystem = get("default")
+        // 已经在上面定义了 default() 方法
     }
 }

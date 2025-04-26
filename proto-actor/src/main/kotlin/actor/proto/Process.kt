@@ -23,6 +23,19 @@ open class LocalProcess(private val mailbox: Mailbox) : Process() {
 
     override fun stop(pid: PID) {
         super.stop(pid)
+        markAsDead()
+    }
+
+    /**
+     * 标记进程为死亡
+     */
+    fun markAsDead() {
         isDead = true
     }
+
+    /**
+     * 检查进程是否已死亡
+     * @return 如果进程已死亡则为 true，否则为 false
+     */
+    fun isDead(): Boolean = isDead
 }
