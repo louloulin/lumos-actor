@@ -30,11 +30,6 @@ abstract class PersistentActor : Actor {
         // Mock implementation
     }
 
-    override suspend fun receive(context: Context) {
-        val message = context.message
-        receiveCommand(context, message)
-    }
-
     override suspend fun Context.receive(msg: Any) {
         receiveCommand(this, msg)
     }

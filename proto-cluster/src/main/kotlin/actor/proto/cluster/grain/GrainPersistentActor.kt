@@ -62,7 +62,7 @@ abstract class GrainPersistentActor<TState> : PersistentActor() {
         when (message) {
             is RequestSnapshot -> {
                 val currentState = getState()
-                persistSnapshot(currentState)
+                persistSnapshot(currentState as Any)
                 logger.debug { "Created snapshot, state: $currentState" }
             }
             else -> {
