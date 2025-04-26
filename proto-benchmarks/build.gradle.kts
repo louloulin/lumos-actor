@@ -53,14 +53,14 @@ tasks.test {
 }
 
 application {
-    mainClass.set("actor.proto.benchmarks.local.MailboxBenchmark")
+    mainClass.set("actor.proto.benchmarks.simple.SimpleBenchmarkKt")
 }
 
 graalvmNative {
     binaries {
         named("main") {
             imageName.set("protoactor-benchmark")
-            mainClass.set("actor.proto.benchmarks.local.MailboxBenchmark")
+            mainClass.set("actor.proto.benchmarks.simple.SimpleBenchmarkKt")
             buildArgs.add("--no-fallback")
             buildArgs.add("--report-unsupported-elements-at-runtime")
             buildArgs.add("-H:+ReportExceptionStackTraces")
@@ -71,6 +71,18 @@ graalvmNative {
     }
     metadataRepository {
         enabled.set(true)
+    }
+
+    // 配置 Agent 支持，用于自动生成反射配置
+    agent {
+        enabled.set(true)
+        defaultMode.set("standard")
+
+        metadataCopy {
+            inputTaskNames.add("run")
+            outputDirectories.add("src/main/resources/META-INF/native-image/")
+            mergeWithExisting.set(true)
+        }
     }
 }
 
