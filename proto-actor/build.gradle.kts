@@ -35,6 +35,11 @@ dependencies {
     add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["coroutinesVersion"]}")
     add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["coroutinesVersion"]}")
 
+    // Prometheus 依赖
+    add("implementation", "io.prometheus:simpleclient:0.16.0")
+    add("implementation", "io.prometheus:simpleclient_hotspot:0.16.0")
+    add("implementation", "io.prometheus:simpleclient_httpserver:0.16.0")
+
     add("testImplementation", "org.slf4j:slf4j-simple:${project.extra["slf4jVersion"]}")
     add("testImplementation", "org.awaitility:awaitility:${project.extra["awaitilityVersion"]}")
 }

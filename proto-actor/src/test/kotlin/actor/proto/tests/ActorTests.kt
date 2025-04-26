@@ -115,7 +115,7 @@ class ActorTests {
 
         // Wait until the first 6 messages (where the "hello" is also included) arrived
         Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-            messages.count() >= 6
+            assertTrue(messages.count() >= 8, "Expected at least 8 messages, got ${messages.count()}: $messages")
             assertSame(Stopping, messages[6])
             assertSame(Stopped, messages[7])
         }

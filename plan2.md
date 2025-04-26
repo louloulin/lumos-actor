@@ -114,11 +114,11 @@
    - 支持 Actor、Sender 和 Receiver Middleware (已实现)
    - 提供常用 Middleware 实现（日志、恢复、度量等） (已实现)
 
-3. **实现 Metrics 系统**
-   - 添加核心度量接口
-   - 实现 Actor 系统度量
-   - 支持 Mailbox、Router 和 Remote 度量
-   - 提供与 Prometheus 等系统的集成
+3. **实现 Metrics 系统** ✅
+   - 添加核心度量接口 ✅
+   - 实现 Actor 系统度量 ✅
+   - 支持 Mailbox、Router 和 Remote 度量 ✅
+   - 提供与 Prometheus 等系统的集成 ✅
 
 4. **实现 Cluster Consensus 机制**
    - 添加 Consensus 接口和基础实现

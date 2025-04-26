@@ -4,6 +4,7 @@ import actor.proto.diagnostics.Diagnostics
 import actor.proto.diagnostics.MatchType
 import actor.proto.diagnostics.ProcessInfo
 import actor.proto.guardian.GuardiansValue
+import actor.proto.metrics.MetricsRegistry
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -15,6 +16,11 @@ import kotlinx.coroutines.future.await
  */
 class ActorSystem(val name: String) {
     private val processRegistryImpl = ProcessRegistryImpl(this)
+
+    /**
+     * 度量注册表，用于收集系统度量
+     */
+    val metrics = MetricsRegistry()
 
     val address: String
         get() = processRegistryImpl.address
@@ -58,7 +64,15 @@ class ActorSystem(val name: String) {
      */
     fun actorOf(props: Props): PID {
         val name = processRegistryImpl.nextId()
-        return actorOf(props, name)
+        val startTime = System.nanoTime()
+        val pid = actorOf(props, name)
+        val duration = System.nanoTime() - startTime
+
+        // 记录 actor 创建度量
+        metrics.counter("actor.created", mapOf("system" to this.name)).inc()
+        metrics.histogram("actor.creation.time", mapOf("system" to this.name)).observe(duration / 1_000_000.0)
+
+        return pid
     }
 
     /**
@@ -68,6 +82,8 @@ class ActorSystem(val name: String) {
      * @return The PID of the new actor
      */
     fun actorOf(props: Props, name: String): PID {
+        val startTime = System.nanoTime()
+
         val mailbox = props.mailboxProducer()
         val dispatcher = props.dispatcher
         val process = LocalProcess(mailbox)
@@ -76,6 +92,17 @@ class ActorSystem(val name: String) {
         mailbox.registerHandlers(ctx, dispatcher)
         mailbox.postSystemMessage(Started)
         mailbox.start()
+
+        val duration = System.nanoTime() - startTime
+        metrics.counter("actor.created.named", mapOf(
+            "system" to this.name,
+            "actor_name" to name
+        )).inc()
+        metrics.histogram("actor.creation.time.named", mapOf(
+            "system" to this.name,
+            "actor_name" to name
+        )).observe(duration / 1_000_000.0)
+
         return self
     }
 
@@ -86,6 +113,12 @@ class ActorSystem(val name: String) {
     fun stop(pid: PID) {
         val process = processRegistryImpl.get(pid)
         process.stop(pid)
+
+        // 记录 actor 停止度量
+        metrics.counter("actor.stopped", mapOf(
+            "system" to this.name,
+            "actor_id" to pid.id
+        )).inc()
     }
 
     /**
@@ -102,8 +135,20 @@ class ActorSystem(val name: String) {
      * @param message The message to send
      */
     fun send(pid: PID, message: Any) {
+        val startTime = System.nanoTime()
         val process = processRegistryImpl.get(pid)
         process.sendUserMessage(pid, message)
+        val duration = System.nanoTime() - startTime
+
+        // 记录消息发送度量
+        metrics.counter("actor.messages.sent", mapOf(
+            "system" to this.name,
+            "message_type" to message.javaClass.simpleName
+        )).inc()
+        metrics.histogram("actor.messages.sending.time", mapOf(
+            "system" to this.name,
+            "message_type" to message.javaClass.simpleName
+        )).observe(duration / 1_000_000.0)
     }
 
     /**
