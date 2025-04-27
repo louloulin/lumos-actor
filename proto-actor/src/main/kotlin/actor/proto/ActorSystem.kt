@@ -38,6 +38,7 @@ class ActorSystem(val name: String) {
     val scheduler = Scheduler()
     val deadLetter: Process = DeadLetterProcess
     val guardians = GuardiansValue(this)
+    private val plugins = mutableMapOf<String, Any>()
 
     init {
         processRegistryImpl.registerHostResolver { pid ->
@@ -204,6 +205,32 @@ class ActorSystem(val name: String) {
     fun processRegistry(): ProcessRegistryImpl = processRegistryImpl
 
     /**
+     * 注册插件
+     * @param plugin 插件实例
+     */
+    fun registerPlugin(plugin: Any) {
+        // 使用反射获取id和version
+        val idMethod = plugin.javaClass.getMethod("id")
+        val versionMethod = plugin.javaClass.getMethod("version")
+        val initMethod = plugin.javaClass.getMethod("init", ActorSystem::class.java)
+
+        val id = idMethod.invoke(plugin) as String
+        val version = versionMethod.invoke(plugin) as String
+
+        plugins[id] = plugin
+        initMethod.invoke(plugin, this)
+
+        logger.info("Plugin registered", "id" to id, "version" to version)
+    }
+
+    /**
+     * 获取插件
+     * @param id 插件ID
+     * @return 插件实例，如果不存在则返回null
+     */
+    fun getPlugin(id: String): Any? = plugins[id]
+
+    /**
      * Get information about a process
      * @param pid The PID of the process
      * @return The process information
@@ -246,6 +273,27 @@ class ActorSystem(val name: String) {
      */
     fun getAllProcessInfos(): List<ProcessInfo> {
         return diagnostics.getAllProcessInfos()
+    }
+
+    /**
+     * 关闭 Actor 系统
+     */
+    fun shutdown() {
+        // 关闭所有插件
+        plugins.values.forEach { plugin ->
+            try {
+                val shutdownMethod = plugin.javaClass.getMethod("shutdown")
+                shutdownMethod.invoke(plugin)
+            } catch (e: Exception) {
+                logger.error("Failed to shutdown plugin", e)
+            }
+        }
+        plugins.clear()
+
+        // 关闭调度器
+        scheduler.shutdown()
+
+        logger.info("Actor system shutdown", "id" to name)
     }
 
     companion object {
