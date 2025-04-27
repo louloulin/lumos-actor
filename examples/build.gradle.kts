@@ -43,6 +43,15 @@ tasks.register<JavaExec>("runPubSubExtensionsExample") {
     }
 }
 
+// Task to run ConsensusExample
+tasks.register<JavaExec>("runConsensusExample") {
+    group = "application"
+    description = "Run the ConsensusExample"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("actor.proto.examples.consensus.ConsensusExampleKt")
+    jvmArgs = listOf("-Xms512m", "-Xmx1024m")
+}
+
 graalvmNative {
     binaries {
         named("main") {

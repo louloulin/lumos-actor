@@ -7,6 +7,7 @@ import actor.proto.Props
 import actor.proto.fromProducer
 import actor.proto.cluster.consensus.Consensus
 import actor.proto.cluster.consensus.ConsensusCheck
+import actor.proto.cluster.consensus.ConsensusCheckImpl
 import actor.proto.cluster.consensus.ConsensusChecks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,7 @@ private val logger = KotlinLogging.logger {}
 class Gossiper(val cluster: Cluster) {
     val state = ConcurrentHashMap<String, GossipState>()
     val versions = ConcurrentHashMap<String, AtomicLong>()
-    val consensusChecks = ConsensusChecks()
+    val consensusChecks = ConcurrentHashMap<String, ConsensusCheck>()
     val consensusRegistry = ConcurrentHashMap<String, Consensus>()
     private lateinit var pid: PID
 
@@ -45,7 +46,7 @@ class Gossiper(val cluster: Cluster) {
      * @return The consensus check.
      */
     fun registerConsensusCheck(key: String, check: ConsensusCheck): ConsensusCheck {
-        consensusChecks.add(key, check)
+        consensusChecks[key] = check
         return check
     }
 
@@ -123,10 +124,10 @@ class Gossiper(val cluster: Cluster) {
                 eventStream.publish(GossipUpdate(key, theirState.value, theirState.version))
 
                 // Check for consensus
-                val affectedChecks = consensusChecks.getAffectedChecks(key)
-                for (checkKey in affectedChecks) {
-                    val check = consensusChecks.get(checkKey)
-                    check?.check?.invoke(getGossipState(), getActiveMemberIds())
+                // Since we're now using a simple map, we'll check all consensus checks
+                for ((_, check) in consensusChecks) {
+                    val members = cluster.memberList.getMembers()
+                    check.check(members)
                 }
             }
         }
@@ -212,7 +213,7 @@ data class GossipResponse(
  * @return 共识处理器
  */
 fun Gossiper.registerConsensusCheck(key: String, check: ConsensusCheck): Consensus {
-    consensusChecks.add(key, check)
+    consensusChecks[key] = check
     return consensusRegistry.computeIfAbsent(key) { actor.proto.cluster.consensus.DefaultConsensus(it) }
 }
 
@@ -223,7 +224,7 @@ fun Gossiper.registerConsensusCheck(key: String, check: ConsensusCheck): Consens
  */
 fun Gossiper.removeConsensusCheck(key: String): Boolean {
     consensusRegistry.remove(key)
-    return consensusChecks.remove(key)
+    return consensusChecks.remove(key) != null
 }
 
 /**

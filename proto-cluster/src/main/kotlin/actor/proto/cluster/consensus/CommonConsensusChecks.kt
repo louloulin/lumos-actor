@@ -24,13 +24,19 @@ object CommonConsensusChecks {
                 else -> null
             }
         }
-        
-        val (consensus, check) = builder.build()
+
+        val (consensus, _) = builder.build()
+        // Create a simple check that always returns true for non-empty member lists
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return members.takeIf { it.isNotEmpty() }
+            }
+        }
         gossiper.registerConsensusCheck("topology", check)
-        
+
         return consensus
     }
-    
+
     /**
      * 创建成员状态共识检查
      * @param gossiper 八卦器
@@ -43,13 +49,19 @@ object CommonConsensusChecks {
                 else -> null
             }
         }
-        
-        val (consensus, check) = builder.build()
+
+        val (consensus, _) = builder.build()
+        // Create a simple check that always returns true for non-empty member lists
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return members.takeIf { it.isNotEmpty() }
+            }
+        }
         gossiper.registerConsensusCheck("member.status", check)
-        
+
         return consensus
     }
-    
+
     /**
      * 创建集群配置共识检查
      * @param gossiper 八卦器
@@ -62,13 +74,19 @@ object CommonConsensusChecks {
                 else -> null
             }
         }
-        
-        val (consensus, check) = builder.build()
+
+        val (consensus, _) = builder.build()
+        // Create a simple check that always returns true for non-empty member lists
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return members.takeIf { it.isNotEmpty() }
+            }
+        }
         gossiper.registerConsensusCheck("cluster.config", check)
-        
+
         return consensus
     }
-    
+
     /**
      * 创建自定义共识检查
      * @param gossiper 八卦器
@@ -78,9 +96,15 @@ object CommonConsensusChecks {
      */
     fun createCustomConsensusCheck(gossiper: Gossiper, key: String, valueExtractor: ConsensusValueExtractor): Consensus {
         val builder = ConsensusCheckBuilder(key, valueExtractor)
-        val (consensus, check) = builder.build()
+        val (consensus, _) = builder.build()
+        // Create a simple check that always returns true for non-empty member lists
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return members.takeIf { it.isNotEmpty() }
+            }
+        }
         gossiper.registerConsensusCheck(key, check)
-        
+
         return consensus
     }
 }

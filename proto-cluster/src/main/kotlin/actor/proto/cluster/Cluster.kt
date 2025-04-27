@@ -2,6 +2,9 @@ package actor.proto.cluster
 
 import actor.proto.ActorSystem
 import actor.proto.PID
+import actor.proto.cluster.consensus.Consensus
+import actor.proto.cluster.consensus.ConsensusCheckBuilder
+import actor.proto.cluster.consensus.ConsensusManager
 import actor.proto.cluster.informer.Informer
 import actor.proto.remote.Remote
 import actor.proto.remote.RemoteConfig
@@ -27,6 +30,7 @@ class Cluster(
     lateinit var pubSub: PubSub
     lateinit var remote: Remote
     lateinit var informer: Informer
+    lateinit var consensusManager: ConsensusManager
 
     /**
      * Start the cluster as a member.
@@ -52,6 +56,10 @@ class Cluster(
         // Initialize informer
         informer = config.informer
         informer.initialize(this)
+
+        // Initialize consensus manager
+        consensusManager = ConsensusManager(this)
+        consensusManager.start()
 
         // Initialize kinds
         initKinds()
@@ -108,6 +116,9 @@ class Cluster(
         // Shutdown informer
         informer.shutdown()
 
+        // Shutdown consensus manager
+        consensusManager.stop()
+
         // Shutdown remote
         if (graceful) {
             remote.shutdown(true)
@@ -141,6 +152,31 @@ class Cluster(
      */
     fun getClusterKinds(): Map<String, Kind> {
         return kinds.toMap()
+    }
+
+    /**
+     * Register a consensus check.
+     * @param key The key of the consensus check.
+     * @param builder The consensus check builder.
+     * @param buildAll Whether to build all consensus checks.
+     * @return The consensus handler.
+     */
+    fun registerConsensusCheck(key: String, builder: ConsensusCheckBuilder, buildAll: Boolean = true): Consensus {
+        val check = if (buildAll) {
+            actor.proto.cluster.consensus.AllConsensusCheck(builder.buildChecks())
+        } else {
+            actor.proto.cluster.consensus.AnyConsensusCheck(builder.buildChecks())
+        }
+        return consensusManager.registerCheck(key, check)
+    }
+
+    /**
+     * Get a consensus handler.
+     * @param key The key of the consensus handler.
+     * @return The consensus handler, or null if not found.
+     */
+    fun getConsensus(key: String): Consensus? {
+        return consensusManager.getConsensus(key)
     }
 
     /**

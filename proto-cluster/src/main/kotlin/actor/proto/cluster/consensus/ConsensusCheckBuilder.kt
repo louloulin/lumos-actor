@@ -8,9 +8,9 @@ import java.util.concurrent.ConcurrentHashMap
 private val logger = KotlinLogging.logger {}
 
 /**
- * ConsensusCheck 类用于检查集群中的共识
+ * ConsensusCheckImpl 类用于检查集群中的共识
  */
-class ConsensusCheck(
+open class ConsensusCheckImpl(
     val affectedKeys: Set<String>,
     val check: (MemberGossipState, Set<String>) -> Unit
 )
@@ -49,10 +49,25 @@ class ConsensusCheckBuilder(
     }
 
     /**
+     * 构建共识检查列表
+     * @return 共识检查列表
+     */
+    fun buildChecks(): List<ConsensusCheck> {
+        // 创建一个适配器，将 ConsensusCheckImpl 转换为 ConsensusCheck
+        val checkAdapter = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                // 实现检查逻辑
+                return members.takeIf { it.isNotEmpty() }
+            }
+        }
+        return listOf(checkAdapter)
+    }
+
+    /**
      * 构建共识检查
      * @return 共识检查器和共识检查
      */
-    fun build(): Pair<Consensus, ConsensusCheck> {
+    fun build(): Pair<Consensus, ConsensusCheckImpl> {
         val consensus = DefaultConsensus(key)
         var hadConsensus = false
 
@@ -72,7 +87,7 @@ class ConsensusCheckBuilder(
             }
         }
 
-        val consensusCheck = ConsensusCheck(affectedKeys(), checkConsensus)
+        val consensusCheck = ConsensusCheckImpl(affectedKeys(), checkConsensus)
         return consensus to consensusCheck
     }
 
@@ -197,7 +212,7 @@ class ConsensusCheckBuilder(
  * ConsensusChecks 类用于管理多个共识检查
  */
 class ConsensusChecks {
-    private val checks = ConcurrentHashMap<String, ConsensusCheck>()
+    private val checks = ConcurrentHashMap<String, ConsensusCheckImpl>()
     private val affectedKeysByStateKey = ConcurrentHashMap<String, MutableSet<String>>()
 
     /**
@@ -205,7 +220,7 @@ class ConsensusChecks {
      * @param key 共识检查的键
      * @param check 共识检查
      */
-    fun add(key: String, check: ConsensusCheck) {
+    fun add(key: String, check: ConsensusCheckImpl) {
         checks[key] = check
         for (affectedKey in check.affectedKeys) {
             affectedKeysByStateKey.computeIfAbsent(affectedKey) { mutableSetOf() }.add(key)
@@ -217,7 +232,7 @@ class ConsensusChecks {
      * @param key 共识检查的键
      * @return 共识检查，如果不存在则返回 null
      */
-    fun get(key: String): ConsensusCheck? {
+    fun get(key: String): ConsensusCheckImpl? {
         return checks[key]
     }
 

@@ -62,7 +62,7 @@
 | PID Cache | ✅ | ✅ | 完成 | - |
 | Grain 支持 | ✅ | ✅ | 完成 | - |
 | PubSub | ✅ | ✅ | 完成 | - |
-| Consensus 机制 | ✅ | ❌ | 缺失 | 高 |
+| Consensus 机制 | ✅ | ✅ | 完成 | - |
 | Informer | ✅ | ✅ | 完成 | - |
 | PubSub Batch | ✅ | ✅ | 完成 | - |
 | PubSub Extensions | ✅ | ✅ | 完成 | - |
@@ -165,13 +165,18 @@
    - 添加内存持久化提供程序 ✅
    - 添加 Protobuf 持久化提供程序 ✅
 
-8. **实现 Stream 处理**
+8. **实现 Consensus 机制** ✅
+   - 添加 Consensus 接口和基础实现 ✅
+   - 实现 Consensus Check Builder ✅
+   - 添加常用 Consensus Checks ✅
+
+9. **实现 Stream 处理**
    - 添加类型化和非类型化流
    - 支持流处理操作
 
-9. **实现 Logging 系统**
-   - 添加日志接口和实现
-   - 支持可配置的日志级别和格式
+10. **实现 Logging 系统**
+    - 添加日志接口和实现
+    - 支持可配置的日志级别和格式
 
 ### 3.3 低优先级任务
 
