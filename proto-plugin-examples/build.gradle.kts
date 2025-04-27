@@ -48,3 +48,24 @@ tasks.withType<JavaCompile> {
     targetCompatibility = JavaVersion.VERSION_17.toString()
     sourceCompatibility = JavaVersion.VERSION_17.toString()
 }
+
+// 添加构建 jvm-libp2p 的任务
+tasks.register("buildLibp2p") {
+    group = "build"
+    description = "Builds jvm-libp2p from source and copies JAR files to libs directory"
+
+    doLast {
+        exec {
+            commandLine("./build-libp2p.sh")
+        }
+    }
+}
+
+// 让 proto-cluster-libp2p 模块的构建依赖于 buildLibp2p 任务
+subprojects {
+    if (name == "proto-cluster-libp2p") {
+        tasks.named("compileKotlin") {
+            dependsOn(rootProject.tasks.named("buildLibp2p"))
+        }
+    }
+}
