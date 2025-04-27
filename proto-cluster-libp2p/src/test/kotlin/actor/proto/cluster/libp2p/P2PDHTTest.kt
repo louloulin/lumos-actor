@@ -5,6 +5,7 @@ import actor.proto.PID
 import actor.proto.Props
 import actor.proto.cluster.Cluster
 import actor.proto.cluster.ClusterConfig
+import actor.proto.cluster.ClusterIdentity
 import actor.proto.cluster.ClusterKind
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -12,13 +13,12 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class P2PClusterTest {
+class P2PDHTTest {
     
     private lateinit var system1: ActorSystem
     private lateinit var system2: ActorSystem
@@ -48,71 +48,19 @@ class P2PClusterTest {
     
     @Test
     @Timeout(30) // 30 秒超时
-    fun `should form a cluster with two nodes`() = runBlocking {
+    fun `should register and lookup actor in DHT`() = runBlocking {
         // 创建 P2P 集群配置
         val p2pConfig1 = P2PClusterConfig(
             clusterName = "test-cluster",
             enableMDns = true,
+            enableDHT = true,
             listenPort = 4001
         )
         
         val p2pConfig2 = P2PClusterConfig(
             clusterName = "test-cluster",
             enableMDns = true,
-            listenPort = 4002
-        )
-        
-        // 创建集群提供者
-        val clusterProvider1 = P2PClusterProvider(p2pConfig1)
-        val clusterProvider2 = P2PClusterProvider(p2pConfig2)
-        
-        // 创建集群配置
-        val clusterConfig1 = ClusterConfig(
-            clusterName = "test-cluster",
-            clusterProvider = clusterProvider1
-        )
-        
-        val clusterConfig2 = ClusterConfig(
-            clusterName = "test-cluster",
-            clusterProvider = clusterProvider2
-        )
-        
-        // 创建并启动集群
-        cluster1 = Cluster(system1, clusterConfig1)
-        cluster2 = Cluster(system2, clusterConfig2)
-        
-        // 启动集群
-        cluster1.startMember()
-        cluster2.startMember()
-        
-        // 等待集群形成
-        delay(5000)
-        
-        // 验证集群成员
-        val members1 = cluster1.memberList.getMembers()
-        val members2 = cluster2.memberList.getMembers()
-        
-        println("Cluster 1 members: $members1")
-        println("Cluster 2 members: $members2")
-        
-        // 验证每个集群都有两个成员
-        assertEquals(2, members1.size, "Cluster 1 should have 2 members")
-        assertEquals(2, members2.size, "Cluster 2 should have 2 members")
-    }
-    
-    @Test
-    @Timeout(30) // 30 秒超时
-    fun `should activate virtual actor across nodes`() = runBlocking {
-        // 创建 P2P 集群配置
-        val p2pConfig1 = P2PClusterConfig(
-            clusterName = "test-cluster",
-            enableMDns = true,
-            listenPort = 4001
-        )
-        
-        val p2pConfig2 = P2PClusterConfig(
-            clusterName = "test-cluster",
-            enableMDns = true,
+            enableDHT = true,
             listenPort = 4002
         )
         
@@ -163,12 +111,31 @@ class P2PClusterTest {
         // 等待集群形成
         delay(5000)
         
-        // 获取虚拟 Actor
-        val pid: PID = cluster1.get("test-actor", "test")
-        assertNotNull(pid, "Virtual actor PID should not be null")
+        // 在第一个节点上激活 Actor
+        val clusterIdentity = ClusterIdentity("test", "test-actor")
+        val dht1 = clusterProvider1.getDHT()
+        assertNotNull(dht1, "DHT should not be null")
+        
+        // 在本地激活 Actor
+        val pid1 = cluster1.get("test-actor", "test")
+        assertNotNull(pid1, "PID should not be null")
+        
+        // 等待 DHT 同步
+        delay(2000)
+        
+        // 从第二个节点查找 Actor
+        val dht2 = clusterProvider2.getDHT()
+        assertNotNull(dht2, "DHT should not be null")
+        
+        val pid2 = dht2.lookup(clusterIdentity)
+        assertNotNull(pid2, "PID should be found in DHT")
+        
+        // 验证 PID 是否相同
+        assertEquals(pid1.address, pid2?.address, "PID address should match")
+        assertEquals(pid1.id, pid2?.id, "PID id should match")
         
         // 发送消息
-        system1.root.send(pid, "hello")
+        system2.root.send(pid2!!, "hello")
         
         // 等待消息处理
         val received = latch.await(10, TimeUnit.SECONDS)

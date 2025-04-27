@@ -2,21 +2,21 @@ plugins {
     kotlin("jvm")
 }
 
+repositories {
+    // ...
+    maven { url = uri("https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/") }
+    maven { url = uri("https://jitpack.io") }
+    maven { url = uri("https://artifacts.consensys.net/public/maven/maven/") }
+}
+
 dependencies {
     api(project(":proto-actor"))
     api(project(":proto-remote"))
     api(project(":proto-cluster"))
 
-    // 使用本地 jvm-libp2p 依赖
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-minimal.jar"))
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-core.jar"))
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-crypto.jar"))
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-discovery.jar"))
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-protocol.jar"))
-    implementation(files("../libs/jvm-libp2p/jvm-libp2p-pubsub.jar"))
 
     // 如果您有本地 jvm-libp2p 源码，也可以使用项目依赖
-    // implementation(project(":jvm-libp2p"))
+     implementation(project("io.libp2p:jvm-libp2p:1.2.1-RELEASE"))
 
     // 其他依赖
     implementation("io.github.microutils:kotlin-logging:2.0.11")
