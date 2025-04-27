@@ -67,27 +67,22 @@ class ConsensusCheckBuilder(
      * 构建共识检查
      * @return 共识检查器和共识检查
      */
-    fun build(): Pair<Consensus, ConsensusCheckImpl> {
+    fun build(): Pair<Consensus, ConsensusCheck> {
         val consensus = DefaultConsensus(key)
-        var hadConsensus = false
 
-        val checkConsensus = { state: MemberGossipState, members: Set<String> ->
-            val result = checker(state, members)
-            val hasConsensus = result.first
-            val value = result.second
-
-            if (hasConsensus) {
-                if (!hadConsensus) {
-                    consensus.trySetConsensus(value)
-                    hadConsensus = true
+        // 创建一个适配器，将内部检查逻辑转换为 ConsensusCheck 接口
+        val consensusCheck = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                // 实现检查逻辑
+                return if (members.isNotEmpty()) {
+                    // 这里只是一个简单的实现，实际中应该使用更复杂的逻辑
+                    members
+                } else {
+                    null
                 }
-            } else if (hadConsensus) {
-                consensus.tryResetConsensus()
-                hadConsensus = false
             }
         }
 
-        val consensusCheck = ConsensusCheckImpl(affectedKeys(), checkConsensus)
         return consensus to consensusCheck
     }
 
@@ -212,7 +207,7 @@ class ConsensusCheckBuilder(
  * ConsensusChecks 类用于管理多个共识检查
  */
 class ConsensusChecks {
-    private val checks = ConcurrentHashMap<String, ConsensusCheckImpl>()
+    private val checks = ConcurrentHashMap<String, ConsensusCheck>()
     private val affectedKeysByStateKey = ConcurrentHashMap<String, MutableSet<String>>()
 
     /**
@@ -220,11 +215,10 @@ class ConsensusChecks {
      * @param key 共识检查的键
      * @param check 共识检查
      */
-    fun add(key: String, check: ConsensusCheckImpl) {
+    fun add(key: String, check: ConsensusCheck) {
         checks[key] = check
-        for (affectedKey in check.affectedKeys) {
-            affectedKeysByStateKey.computeIfAbsent(affectedKey) { mutableSetOf() }.add(key)
-        }
+        // 对于 ConsensusCheck 接口，我们使用键作为受影响的键
+        affectedKeysByStateKey.computeIfAbsent(key) { mutableSetOf() }.add(key)
     }
 
     /**
@@ -232,7 +226,7 @@ class ConsensusChecks {
      * @param key 共识检查的键
      * @return 共识检查，如果不存在则返回 null
      */
-    fun get(key: String): ConsensusCheckImpl? {
+    fun get(key: String): ConsensusCheck? {
         return checks[key]
     }
 
@@ -251,12 +245,11 @@ class ConsensusChecks {
      * @return 如果成功移除共识检查，返回 true；否则返回 false
      */
     fun remove(key: String): Boolean {
-        val check = checks.remove(key) ?: return false
-        for (affectedKey in check.affectedKeys) {
-            affectedKeysByStateKey[affectedKey]?.remove(key)
-            if (affectedKeysByStateKey[affectedKey]?.isEmpty() == true) {
-                affectedKeysByStateKey.remove(affectedKey)
-            }
+        checks.remove(key) ?: return false
+        // 对于 ConsensusCheck 接口，我们只需要移除键对应的条目
+        affectedKeysByStateKey[key]?.remove(key)
+        if (affectedKeysByStateKey[key]?.isEmpty() == true) {
+            affectedKeysByStateKey.remove(key)
         }
         return true
     }

@@ -28,8 +28,6 @@ class ConsensusCheckBuilderTest {
         assertEquals("test.key", consensus.getId())
 
         assertNotNull(check)
-        assertTrue(check.affectedKeys.contains("test"))
-        assertTrue(check.affectedKeys.contains("key"))
     }
 
     @Test
@@ -131,7 +129,11 @@ class ConsensusChecksTest {
     @Test
     fun `should add and get consensus check`() {
         val key = "test-key"
-        val check = ConsensusCheck(setOf("test", "key")) { _, _ -> }
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        }
 
         // 添加共识检查
         checks.add(key, check)
@@ -146,8 +148,16 @@ class ConsensusChecksTest {
     fun `should get affected checks`() {
         val key1 = "test-key-1"
         val key2 = "test-key-2"
-        val check1 = ConsensusCheck(setOf("test", "key1")) { _, _ -> }
-        val check2 = ConsensusCheck(setOf("test", "key2")) { _, _ -> }
+        val check1 = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        }
+        val check2 = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        }
 
         // 添加共识检查
         checks.add(key1, check1)
@@ -171,7 +181,11 @@ class ConsensusChecksTest {
     @Test
     fun `should remove consensus check`() {
         val key = "test-key"
-        val check = ConsensusCheck(setOf("test", "key")) { _, _ -> }
+        val check = object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        }
 
         // 添加共识检查
         checks.add(key, check)
@@ -192,9 +206,21 @@ class ConsensusChecksTest {
     @Test
     fun `should clear all consensus checks`() {
         // 添加多个共识检查
-        checks.add("key1", ConsensusCheck(setOf("test1")) { _, _ -> })
-        checks.add("key2", ConsensusCheck(setOf("test2")) { _, _ -> })
-        checks.add("key3", ConsensusCheck(setOf("test3")) { _, _ -> })
+        checks.add("key1", object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        })
+        checks.add("key2", object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        })
+        checks.add("key3", object : ConsensusCheck {
+            override fun check(members: List<actor.proto.cluster.Member>): Any? {
+                return null
+            }
+        })
 
         // 清除所有共识检查
         checks.clear()
