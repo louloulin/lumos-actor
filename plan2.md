@@ -170,9 +170,9 @@
    - 实现 Consensus Check Builder ✅
    - 添加常用 Consensus Checks ✅
 
-9. **实现 Stream 处理**
-   - 添加类型化和非类型化流
-   - 支持流处理操作
+9. **实现 Stream 处理** ✅
+   - 添加类型化和非类型化流 ✅
+   - 支持流处理操作 ✅
 
 10. **实现 Logging 系统**
     - 添加日志接口和实现
