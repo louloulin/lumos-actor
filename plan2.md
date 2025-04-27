@@ -19,7 +19,7 @@
 | Behavior 切换 | ✅ | ✅ | 完成 | - |
 | Middleware 链 | ✅ | ✅ | 完成 | - |
 | Guardian Actor | ✅ | ❌ | 缺失 | 中 |
-| Message Batch | ✅ | ❌ | 缺失 | 低 |
+| Message Batch | ✅ | ✅ | 已实现 | 低 |
 | PID Set | ✅ | ✅ | 完成 | - |
 | Throttler | ✅ | ❌ | 缺失 | 低 |
 | Bounded/Unbounded Mailbox | ✅ | ✅ | 完成 | - |
@@ -180,9 +180,9 @@
 
 ### 3.3 低优先级任务
 
-1. **实现 Message Batch**
-   - 添加消息批处理支持
-   - 优化批量消息处理性能
+1. **实现 Message Batch** ✅
+   - 添加消息批处理支持 ✅
+   - 优化批量消息处理性能 ✅
 
 2. **实现 Throttler**
    - 添加消息节流功能
@@ -223,7 +223,7 @@
 - 实现 Stream 处理
 
 ### 第四阶段（9-12个月）
-- 实现 Message Batch
+- 实现 Message Batch ✅
 - 实现 Throttler
 - 实现 Response Status Code ✅
 - 实现 Rendezvous 哈希 ✅

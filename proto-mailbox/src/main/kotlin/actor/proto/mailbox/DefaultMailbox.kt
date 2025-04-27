@@ -19,6 +19,22 @@ class DefaultMailbox(private val systemMessages: MailboxQueue,
     fun status(): Int = status.get()
 
     override fun postUserMessage(msg: Any) {
+        // Handle MessageBatch - extract and post individual messages
+        if (msg is MessageBatch) {
+            val messages = msg.getMessages()
+            for (m in messages) {
+                postUserMessage(m)
+            }
+            // Also post the batch itself
+            postSingleUserMessage(msg)
+            return
+        }
+
+        // Handle normal message
+        postSingleUserMessage(msg)
+    }
+
+    private fun postSingleUserMessage(msg: Any) {
         if (userMailbox.offer(msg)) {
             userCount.incrementAndGet()
             schedule()
