@@ -73,8 +73,8 @@
 | 功能 | ProtoActor-Go | ProtoActor-Kotlin | 状态 | 优先级 |
 |------|--------------|-------------------|------|--------|
 | 基础持久化功能 | ✅ | ✅ | 完成 | - |
-| In-Memory Provider | ✅ | ❌ | 缺失 | 中 |
-| Protobuf Provider | ✅ | ❌ | 缺失 | 中 |
+| In-Memory Provider | ✅ | ✅ | 完成 | - |
+| Protobuf Provider | ✅ | ✅ | 完成 | - |
 
 ### 1.6 其他功能
 
@@ -161,9 +161,9 @@
    - 添加批处理消息支持 ✅
    - 实现 PubSub 扩展机制
 
-7. **实现 Persistence Providers**
-   - 添加内存持久化提供程序
-   - 添加 Protobuf 持久化提供程序
+7. **实现 Persistence Providers** ✅
+   - 添加内存持久化提供程序 ✅
+   - 添加 Protobuf 持久化提供程序 ✅
 
 8. **实现 Stream 处理**
    - 添加类型化和非类型化流
