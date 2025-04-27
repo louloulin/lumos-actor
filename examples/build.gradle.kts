@@ -52,6 +52,15 @@ tasks.register<JavaExec>("runConsensusExample") {
     jvmArgs = listOf("-Xms512m", "-Xmx1024m")
 }
 
+// Task to run MessageBatch example
+tasks.register<JavaExec>("runMessageBatchExample") {
+    group = "application"
+    description = "Run the MessageBatch example"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("actor.proto.examples.messagebatch.KotlinBatchDemoKt")
+    jvmArgs = listOf("-Xms512m", "-Xmx1024m")
+}
+
 graalvmNative {
     binaries {
         named("main") {
