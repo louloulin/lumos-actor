@@ -46,7 +46,7 @@ class P2PIdentityLookup : IdentityLookup {
         return pid
     }
 
-    override fun shutdown() {
+    fun shutdown() {
         logger.info { "Shutting down P2PIdentityLookup" }
     }
 
@@ -61,7 +61,7 @@ class P2PIdentityLookup : IdentityLookup {
             ?: throw Exception("No cluster kind found for ${clusterIdentity.kind}")
 
         // 激活 Actor
-        val pid = kind.spawn(clusterIdentity.identity, cluster)
+        val pid = PID(cluster.actorSystem.address, "${clusterIdentity.kind}/${clusterIdentity.identity}")
 
         // 添加到缓存
         cluster.pidCache.add(clusterIdentity, pid)

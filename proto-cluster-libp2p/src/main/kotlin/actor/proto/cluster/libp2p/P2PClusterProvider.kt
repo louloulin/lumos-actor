@@ -24,10 +24,24 @@ class P2PClusterProvider(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var isRunning = false
 
+    private lateinit var discovery: P2PDiscovery
+    private lateinit var protocol: P2PClusterProtocol
+    private lateinit var identityLookup: P2PIdentityLookup
+
     override suspend fun startMember(cluster: Cluster): Boolean {
         this.cluster = cluster
 
         logger.info { "Starting P2P cluster member at ${cluster.actorSystem.address}" }
+
+        // 初始化组件
+        discovery = P2PDiscovery(config, cluster)
+        protocol = P2PClusterProtocol(this)
+        identityLookup = P2PIdentityLookup()
+
+        // 启动组件
+        discovery.start()
+        protocol.start()
+        identityLookup.setup(cluster, cluster.getClusterKinds(), false)
 
         // 注册集群成员
         registerMember()
@@ -45,6 +59,16 @@ class P2PClusterProvider(
 
         logger.info { "Starting P2P cluster client at ${cluster.actorSystem.address}" }
 
+        // 初始化组件
+        discovery = P2PDiscovery(config, cluster)
+        protocol = P2PClusterProtocol(this)
+        identityLookup = P2PIdentityLookup()
+
+        // 启动组件
+        discovery.start()
+        protocol.start()
+        identityLookup.setup(cluster, cluster.getClusterKinds(), true)
+
         isRunning = true
 
         return true
@@ -54,6 +78,11 @@ class P2PClusterProvider(
         if (!isRunning) return true
 
         logger.info { "Shutting down P2P cluster provider" }
+
+        // 停止组件
+        discovery.stop()
+        protocol.stop()
+        identityLookup.shutdown()
 
         isRunning = false
 
@@ -66,8 +95,13 @@ class P2PClusterProvider(
     private fun registerMember() {
         // 将自己注册为集群成员
         val member = createMemberInfo()
-        cluster.memberList.updateClusterTopology(listOf(member))
+        cluster.memberList.addMember(member)
     }
+
+    /**
+     * 获取身份查找服务
+     */
+    fun getIdentityLookup(): P2PIdentityLookup = identityLookup
 
     /**
      * 创建成员信息
@@ -77,7 +111,7 @@ class P2PClusterProvider(
             id = cluster.actorSystem.address,
             host = cluster.actorSystem.address,
             port = config.listenPort,
-            kinds = cluster.getClusterKinds().keys.toList(),
+            labels = mapOf("kinds" to cluster.getClusterKinds().keys.joinToString(",")),
             status = MemberStatus.ALIVE
         )
     }
@@ -91,7 +125,7 @@ class P2PClusterProvider(
                 try {
                     // 发送心跳
                     val member = createMemberInfo()
-                    cluster.memberList.updateClusterTopology(listOf(member))
+                    cluster.memberList.addMember(member)
 
                     // 等待下一个心跳间隔
                     delay(config.heartbeatInterval.toMillis())
