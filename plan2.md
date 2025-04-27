@@ -49,7 +49,7 @@
 | Serialization | ✅ | ✅ | 完成 | - |
 | Activator | ✅ | ✅ | 完成 | - |
 | Blocklist | ✅ | ✅ | 完成 | - |
-| Response Status Code | ✅ | ❌ | 缺失 | 低 |
+| Response Status Code | ✅ | ✅ | 已实现 | 低 |
 
 ### 1.4 Cluster 功能
 
@@ -66,7 +66,7 @@
 | Informer | ✅ | ✅ | 完成 | - |
 | PubSub Batch | ✅ | ✅ | 完成 | - |
 | PubSub Extensions | ✅ | ✅ | 完成 | - |
-| Rendezvous 哈希 | ✅ | ❌ | 缺失 | 低 |
+| Rendezvous 哈希 | ✅ | ✅ | 已实现 | 低 |
 
 ### 1.5 Persistence 功能
 
@@ -188,13 +188,13 @@
    - 添加消息节流功能
    - 支持可配置的节流策略
 
-3. **实现 Response Status Code**
-   - 添加远程响应状态码
-   - 支持错误处理和重试
+3. **实现 Response Status Code** ✅
+   - 添加远程响应状态码 ✅
+   - 支持错误处理和重试 ✅
 
-4. **实现 Rendezvous 哈希**
-   - 添加 Rendezvous 哈希算法
-   - 优化集群路由
+4. **实现 Rendezvous 哈希** ✅
+   - 添加 Rendezvous 哈希算法 ✅
+   - 优化集群路由 ✅
 
 5. **实现 Context Extensions**
    - 添加上下文扩展机制
@@ -225,8 +225,8 @@
 ### 第四阶段（9-12个月）
 - 实现 Message Batch
 - 实现 Throttler
-- 实现 Response Status Code
-- 实现 Rendezvous 哈希
+- 实现 Response Status Code ✅
+- 实现 Rendezvous 哈希 ✅
 - 实现 Context Extensions
 
 ## 5. Process Registry 详细分析与优化计划

@@ -43,7 +43,7 @@ message ActorPidRequest {
 
 message ActorPidResponse {
   actor.PID pid = 1;
-  int32 status_code = 2;
+  ResponseStatusCode status_code = 2;
 }
 
 message ConnectRequest {
@@ -89,6 +89,15 @@ enum ListProcessesMatchType {
   MatchPartOfString = 0;
   MatchExactString = 1;
   MatchRegex = 2;
+}
+
+enum ResponseStatusCode {
+  OK = 0;
+  UNAVAILABLE = 1;
+  TIMEOUT = 2;
+  PROCESS_NAME_ALREADY_EXIST = 3;
+  ERROR = 4;
+  DEAD_LETTER = 5;
 }
 
 message ListProcessesResponse {

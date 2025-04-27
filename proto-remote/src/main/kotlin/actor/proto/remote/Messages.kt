@@ -17,8 +17,8 @@ fun ActorPidRequest(kind: String, name: String): RemoteProtos.ActorPidRequest {
     return builder.build()
 }
 
-fun MessageEnvelope(bytes: ByteString, sender: PID?, targetId: Int, typeId: Int, serializerId: Int): actor.proto.remote.RemoteProtos.MessageEnvelope {
-    val builder = actor.proto.remote.RemoteProtos.MessageEnvelope.newBuilder()
+fun MessageEnvelope(bytes: ByteString, sender: PID?, targetId: Int, typeId: Int, serializerId: Int): RemoteProtos.MessageEnvelope {
+    val builder = RemoteProtos.MessageEnvelope.newBuilder()
     builder.messageData = bytes
     if (sender != null) {
         builder.sender = 0 // TODO: Fix this
@@ -29,19 +29,20 @@ fun MessageEnvelope(bytes: ByteString, sender: PID?, targetId: Int, typeId: Int,
     return builder.build()
 }
 
-fun ConnectRequest(): actor.proto.remote.RemoteProtos.ConnectRequest {
-    val builder = actor.proto.remote.RemoteProtos.ConnectRequest.newBuilder()
+fun ConnectRequest(): RemoteProtos.ConnectRequest {
+    val builder = RemoteProtos.ConnectRequest.newBuilder()
     return builder.build()
 }
 
 
-fun ActorPidResponse(pid: PID): actor.proto.remote.RemoteProtos.ActorPidResponse {
-    val builder = actor.proto.remote.RemoteProtos.ActorPidResponse.newBuilder()
+fun ActorPidResponse(pid: PID, statusCode: ResponseStatusCode = ResponseStatusCode.OK): RemoteProtos.ActorPidResponse {
+    val builder = RemoteProtos.ActorPidResponse.newBuilder()
     val protoPid = actor.proto.ActorProtos.PID.newBuilder()
         .setAddress(pid.address)
         .setId(pid.id)
         .build()
     builder.pid = protoPid
+    builder.statusCode = RemoteProtos.ResponseStatusCode.valueOf(statusCode.name)
     return builder.build()
 }
 
