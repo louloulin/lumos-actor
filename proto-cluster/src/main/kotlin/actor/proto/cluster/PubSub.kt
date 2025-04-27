@@ -5,6 +5,11 @@ import actor.proto.Context
 import actor.proto.PID
 import actor.proto.Props
 import actor.proto.fromProducer
+import actor.proto.cluster.pubsub.BatchPublishRequest
+import actor.proto.cluster.pubsub.BatchingProducer
+import actor.proto.cluster.pubsub.BatchingProducerConfig
+import actor.proto.cluster.pubsub.PubSubBatch
+import actor.proto.cluster.pubsub.PubSubBatchResponse
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
@@ -15,14 +20,21 @@ private val logger = KotlinLogging.logger {}
  */
 class PubSub(private val cluster: Cluster) {
     private val topics = ConcurrentHashMap<String, Topic>()
-    private lateinit var pid: PID
-    
+    private lateinit var _pid: PID
+
+    /**
+     * Get the PID of the PubSub actor.
+     * @return The PID of the PubSub actor.
+     */
+    val pid: PID
+        get() = _pid
+
     init {
         // Start the pubsub actor
         val props = fromProducer { PubSubActor(this) }
-        pid = cluster.actorSystem.actorOf(props)
+        _pid = cluster.actorSystem.actorOf(props)
     }
-    
+
     /**
      * Subscribe to a topic.
      * @param topic The topic to subscribe to.
@@ -32,7 +44,7 @@ class PubSub(private val cluster: Cluster) {
         val topicObj = topics.computeIfAbsent(topic) { Topic(it) }
         topicObj.addSubscriber(subscriber)
     }
-    
+
     /**
      * Unsubscribe from a topic.
      * @param topic The topic to unsubscribe from.
@@ -41,13 +53,13 @@ class PubSub(private val cluster: Cluster) {
     fun unsubscribe(topic: String, subscriber: PID) {
         val topicObj = topics[topic] ?: return
         topicObj.removeSubscriber(subscriber)
-        
+
         // Remove the topic if it has no subscribers
         if (topicObj.subscriberCount() == 0) {
             topics.remove(topic)
         }
     }
-    
+
     /**
      * Publish a message to a topic.
      * @param topic The topic to publish to.
@@ -57,7 +69,34 @@ class PubSub(private val cluster: Cluster) {
         val topicObj = topics[topic] ?: return
         topicObj.publish(message)
     }
-    
+
+    /**
+     * Publish a batch of messages to a topic.
+     * @param batch The batch to publish.
+     * @return The response indicating success or failure.
+     */
+    fun publishBatch(batch: PubSubBatch): PubSubBatchResponse {
+        val topicObj = topics[batch.topic] ?: return PubSubBatchResponse(false, "Topic not found: ${batch.topic}")
+
+        try {
+            topicObj.publishBatch(batch.messages)
+            return PubSubBatchResponse(true)
+        } catch (e: Exception) {
+            logger.error(e) { "Error publishing batch to topic ${batch.topic}" }
+            return PubSubBatchResponse(false, e.message)
+        }
+    }
+
+    /**
+     * Create a batching producer for a topic.
+     * @param topic The topic to publish to.
+     * @param config The configuration for the batching producer.
+     * @return The batching producer.
+     */
+    fun batchingProducer(topic: String, config: BatchingProducerConfig = BatchingProducerConfig()): BatchingProducer {
+        return BatchingProducer(cluster, topic, config)
+    }
+
     /**
      * Get a topic by name.
      * @param topic The name of the topic.
@@ -66,7 +105,7 @@ class PubSub(private val cluster: Cluster) {
     fun getTopic(topic: String): Topic? {
         return topics[topic]
     }
-    
+
     /**
      * Get all topics.
      * @return A map of topic names to topics.
@@ -81,7 +120,7 @@ class PubSub(private val cluster: Cluster) {
  */
 class Topic(val name: String) {
     private val subscribers = ConcurrentHashMap.newKeySet<PID>()
-    
+
     /**
      * Add a subscriber to the topic.
      * @param subscriber The PID of the subscriber.
@@ -89,7 +128,7 @@ class Topic(val name: String) {
     fun addSubscriber(subscriber: PID) {
         subscribers.add(subscriber)
     }
-    
+
     /**
      * Remove a subscriber from the topic.
      * @param subscriber The PID of the subscriber.
@@ -97,7 +136,7 @@ class Topic(val name: String) {
     fun removeSubscriber(subscriber: PID) {
         subscribers.remove(subscriber)
     }
-    
+
     /**
      * Get the number of subscribers.
      * @return The number of subscribers.
@@ -105,7 +144,7 @@ class Topic(val name: String) {
     fun subscriberCount(): Int {
         return subscribers.size
     }
-    
+
     /**
      * Publish a message to all subscribers.
      * @param message The message to publish.
@@ -120,7 +159,17 @@ class Topic(val name: String) {
             }
         }
     }
-    
+
+    /**
+     * Publish a batch of messages to all subscribers.
+     * @param messages The messages to publish.
+     */
+    fun publishBatch(messages: List<Any>) {
+        for (message in messages) {
+            publish(message)
+        }
+    }
+
     /**
      * Get all subscribers.
      * @return A set of subscriber PIDs.
@@ -146,6 +195,10 @@ class PubSubActor(private val pubSub: PubSub) : Actor {
             }
             is PubSubMessage -> {
                 pubSub.publish(msg.topic, msg.message)
+            }
+            is BatchPublishRequest -> {
+                val response = pubSub.publishBatch(msg.batch)
+                msg.sender?.let { send(it, response) }
             }
         }
     }

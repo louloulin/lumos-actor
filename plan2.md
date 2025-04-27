@@ -64,7 +64,7 @@
 | PubSub | ✅ | ✅ | 完成 | - |
 | Consensus 机制 | ✅ | ❌ | 缺失 | 高 |
 | Informer | ✅ | ✅ | 完成 | - |
-| PubSub Batch | ✅ | ❌ | 缺失 | 中 |
+| PubSub Batch | ✅ | ✅ | 完成 | - |
 | PubSub Extensions | ✅ | ❌ | 缺失 | 中 |
 | Rendezvous 哈希 | ✅ | ❌ | 缺失 | 低 |
 
@@ -158,7 +158,7 @@
    - 支持集群状态变更通知 ✅
 
 6. **实现 PubSub Batch 和 Extensions**
-   - 添加批处理消息支持
+   - 添加批处理消息支持 ✅
    - 实现 PubSub 扩展机制
 
 7. **实现 Persistence Providers**
