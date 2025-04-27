@@ -5,6 +5,9 @@ import actor.proto.Context
 import actor.proto.PID
 import actor.proto.Props
 import actor.proto.fromProducer
+import actor.proto.cluster.consensus.Consensus
+import actor.proto.cluster.consensus.ConsensusCheck
+import actor.proto.cluster.consensus.ConsensusChecks
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,10 +22,11 @@ private val logger = KotlinLogging.logger {}
 /**
  * Gossiper is responsible for gossiping state between cluster members.
  */
-class Gossiper(private val cluster: Cluster) {
-    private val state = ConcurrentHashMap<String, GossipState>()
-    private val versions = ConcurrentHashMap<String, AtomicLong>()
-    private val consensusChecks = ConcurrentHashMap<String, ConsensusCheck>()
+class Gossiper(val cluster: Cluster) {
+    val state = ConcurrentHashMap<String, GossipState>()
+    val versions = ConcurrentHashMap<String, AtomicLong>()
+    val consensusChecks = ConsensusChecks()
+    val consensusRegistry = ConcurrentHashMap<String, Consensus>()
     private lateinit var pid: PID
 
     init {
@@ -40,10 +44,9 @@ class Gossiper(private val cluster: Cluster) {
      * @param check The check function.
      * @return The consensus check.
      */
-    fun registerConsensusCheck(key: String, check: (Any) -> Any?): ConsensusCheck {
-        val consensusCheck = ConsensusCheck(check)
-        consensusChecks[key] = consensusCheck
-        return consensusCheck
+    fun registerConsensusCheck(key: String, check: ConsensusCheck): ConsensusCheck {
+        consensusChecks.add(key, check)
+        return check
     }
 
     /**
@@ -120,7 +123,11 @@ class Gossiper(private val cluster: Cluster) {
                 eventStream.publish(GossipUpdate(key, theirState.value, theirState.version))
 
                 // Check for consensus
-                consensusChecks[key]?.checkConsensus(theirState.value)
+                val affectedChecks = consensusChecks.getAffectedChecks(key)
+                for (checkKey in affectedChecks) {
+                    val check = consensusChecks.get(checkKey)
+                    check?.check?.invoke(getGossipState(), getActiveMemberIds())
+                }
             }
         }
     }
@@ -154,7 +161,7 @@ class Gossiper(private val cluster: Cluster) {
         for (memberId in selectedMembers) {
             try {
                 // Create a gossip request
-                val request = GossipRequest(state.toMap())
+                GossipRequest(state.toMap())
 
                 // Send the request to the member
                 // TODO: Implement remote gossip request
@@ -199,31 +206,59 @@ data class GossipResponse(
 )
 
 /**
- * ConsensusCheck checks for consensus on a key.
+ * 注册共识检查
+ * @param key 共识检查的键
+ * @param check 共识检查
+ * @return 共识处理器
  */
-class ConsensusCheck(private val check: (Any) -> Any?) {
-    private val values = ConcurrentHashMap<Any, Int>()
-    private var consensus: Any? = null
+fun Gossiper.registerConsensusCheck(key: String, check: ConsensusCheck): Consensus {
+    consensusChecks.add(key, check)
+    return consensusRegistry.computeIfAbsent(key) { actor.proto.cluster.consensus.DefaultConsensus(it) }
+}
 
-    /**
-     * Check for consensus on a value.
-     * @param value The value to check.
-     */
-    fun checkConsensus(value: Any) {
-        val key = check(value) ?: return
-        val count = values.compute(key) { _, v -> (v ?: 0) + 1 } ?: 1
+/**
+ * 移除共识检查
+ * @param key 共识检查的键
+ * @return 如果成功移除共识检查，返回 true；否则返回 false
+ */
+fun Gossiper.removeConsensusCheck(key: String): Boolean {
+    consensusRegistry.remove(key)
+    return consensusChecks.remove(key)
+}
 
-        // TODO: Implement consensus algorithm
-        consensus = key
+/**
+ * 获取共识处理器
+ * @param key 共识处理器的键
+ * @return 共识处理器，如果不存在则返回 null
+ */
+fun Gossiper.getConsensus(key: String): Consensus? {
+    return consensusRegistry[key]
+}
+
+/**
+ * 获取八卦状态
+ * @return 八卦状态
+ */
+fun Gossiper.getGossipState(): MemberGossipState {
+    val memberStates = mutableMapOf<String, GossipMemberState>()
+
+    for ((key, _) in state) {
+        // 将 GossipState 转换为 GossipMemberState
+        memberStates[key] = GossipMemberState(key)
     }
 
-    /**
-     * Try to get the consensus value.
-     * @return The consensus value and whether consensus has been reached.
-     */
-    fun tryGetConsensus(): Pair<Any?, Boolean> {
-        return consensus to (consensus != null)
-    }
+    return MemberGossipState(memberStates)
+}
+
+/**
+ * 获取活跃成员 ID
+ * @return 活跃成员 ID 集合
+ */
+fun Gossiper.getActiveMemberIds(): Set<String> {
+    return cluster.memberList.getMembers()
+        .filter { it.status == MemberStatus.ALIVE }
+        .map { it.id }
+        .toSet()
 }
 
 /**
@@ -251,7 +286,7 @@ class GossipLoopActor(private val gossiper: Gossiper) : Actor {
         when (msg) {
             is actor.proto.Started -> {
                 // Start the gossip loop
-                CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+                CoroutineScope(Dispatchers.Default).launch {
                     while (true) {
                         try {
                             gossiper.gossip()

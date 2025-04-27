@@ -10,7 +10,11 @@ data class RemoteConfig(
         val keepAliveTime: Long? = null,
         val keepAliveTimeout: Long? = null,
         val keepAliveWithoutCalls : Boolean? = null,
-        val usePlainText : Boolean = true
+        val usePlainText : Boolean = true,
+        val enableBlocklist: Boolean = true,
+        val blocklistMaxFailures: Int = 3,
+        val blocklistDuration: java.time.Duration = java.time.Duration.ofMinutes(5),
+        val blocklistCleanupInterval: java.time.Duration = java.time.Duration.ofMinutes(1)
 ) {
     companion object {
         fun create(hostname: String, port: Int): RemoteConfig {

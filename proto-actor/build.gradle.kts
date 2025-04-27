@@ -42,6 +42,8 @@ dependencies {
 
     add("testImplementation", "org.slf4j:slf4j-simple:${project.extra["slf4jVersion"]}")
     add("testImplementation", "org.awaitility:awaitility:${project.extra["awaitilityVersion"]}")
+    add("testImplementation", "org.mockito:mockito-core:4.11.0")
+    add("testImplementation", "org.mockito.kotlin:mockito-kotlin:4.1.0")
 }
 
 tasks.withType<Test> {

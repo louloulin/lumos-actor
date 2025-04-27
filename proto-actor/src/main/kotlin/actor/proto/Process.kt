@@ -8,6 +8,12 @@ abstract class Process {
     open fun stop(pid: PID) = sendSystemMessage(pid, StopInstance)
 
     abstract fun sendSystemMessage(pid: PID, message: SystemMessage)
+
+    /**
+     * 检查进程是否活跃
+     * @return 如果进程活跃则返回 true，否则返回 false
+     */
+    open fun isAlive(): Boolean = true
 }
 
 
@@ -38,4 +44,10 @@ open class LocalProcess(private val mailbox: Mailbox) : Process() {
      * @return 如果进程已死亡则为 true，否则为 false
      */
     fun isDead(): Boolean = isDead
+
+    /**
+     * 检查进程是否活跃
+     * @return 如果进程活跃则返回 true，否则返回 false
+     */
+    override fun isAlive(): Boolean = !isDead
 }

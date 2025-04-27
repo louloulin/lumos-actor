@@ -22,7 +22,7 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
     private lateinit var channel: ManagedChannel
     private lateinit var client: RemotingGrpc.RemotingStub
     private lateinit var streamWriter: StreamObserver<RemoteProtos.MessageBatch>
-    suspend override fun Context.receive(msg: Any) {
+    override suspend fun Context.receive(msg: Any) {
         when (msg) {
             is Started -> started()
             is Stopped -> stopped()
@@ -71,7 +71,11 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
         } catch (x: Exception) {
             stash()
             logger.error("gRPC Failed to send to address $address, reason ${x.message}")
-            throw  x
+
+            // 记录失败，可能会将地址添加到阻止列表
+            Remote.blocklistManager.recordFailure(address, null, "gRPC Failed to send: ${x.message}")
+
+            throw x
         }
     }
 
@@ -90,7 +94,7 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
         channel = channelBuilder.build()
         client = RemotingGrpc.newStub(channel)
         val blockingClient = RemotingGrpc.newBlockingStub(channel)
-        val res = blockingClient.connect(RemoteProtos.ConnectRequest.newBuilder().build())
+        blockingClient.connect(RemoteProtos.ConnectRequest.newBuilder().build())
         serializerId = Serialization.defaultSerializerId
         streamWriter = client.receive(object : StreamObserver<RemoteProtos.Unit> {
             override fun onNext(value: RemoteProtos.Unit) {
@@ -107,6 +111,9 @@ class EndpointWriter(private val address: String, private val config: RemoteConf
                 val terminated: EndpointTerminatedEvent = EndpointTerminatedEvent(address)
                 EventStream.publish(terminated)
                 logger.error("Lost connection to address $address", t)
+
+                // 记录失败，可能会将地址添加到阻止列表
+                Remote.blocklistManager.recordFailure(address, null, "Lost connection: ${t?.message}")
             }
         })
         logger.info("Connected to address $address")

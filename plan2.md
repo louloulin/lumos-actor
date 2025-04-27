@@ -20,10 +20,10 @@
 | Middleware 链 | ✅ | ✅ | 完成 | - |
 | Guardian Actor | ✅ | ❌ | 缺失 | 中 |
 | Message Batch | ✅ | ❌ | 缺失 | 低 |
-| PID Set | ✅ | ❌ | 缺失 | 中 |
+| PID Set | ✅ | ✅ | 完成 | - |
 | Throttler | ✅ | ❌ | 缺失 | 低 |
 | Bounded/Unbounded Mailbox | ✅ | ✅ | 完成 | - |
-| Priority Queue | ✅ | ❌ | 缺失 | 中 |
+| Priority Queue | ✅ | ✅ | 完成 | - |
 
 ### 1.2 Router 功能
 
@@ -48,7 +48,7 @@
 | Endpoint Watcher | ✅ | ✅ | 完成 | - |
 | Serialization | ✅ | ✅ | 完成 | - |
 | Activator | ✅ | ✅ | 完成 | - |
-| Blocklist | ✅ | ❌ | 缺失 | 中 |
+| Blocklist | ✅ | ✅ | 完成 | - |
 | Response Status Code | ✅ | ❌ | 缺失 | 低 |
 
 ### 1.4 Cluster 功能
@@ -120,10 +120,10 @@
    - 支持 Mailbox、Router 和 Remote 度量 ✅
    - 提供与 Prometheus 等系统的集成 ✅
 
-4. **实现 Cluster Consensus 机制**
-   - 添加 Consensus 接口和基础实现
-   - 实现 Consensus Check Builder
-   - 添加常用 Consensus Checks
+4. **实现 Cluster Consensus 机制** ✅
+   - 添加 Consensus 接口和基础实现 ✅
+   - 实现 Consensus Check Builder ✅
+   - 添加常用 Consensus Checks ✅
 
 5. **提高测试覆盖率**
    - 为核心组件添加更多单元测试
@@ -141,17 +141,17 @@
    - 添加 Guardian Actor 实现 ✅
    - 支持 Root、System 和 User Guardian ✅
 
-2. **实现 PID Set**
-   - 添加高效的 PID 集合实现
-   - 支持常用集合操作
+2. **实现 PID Set** ✅
+   - 添加高效的 PID 集合实现 ✅
+   - 支持常用集合操作 ✅
 
-3. **实现 Priority Queue**
-   - 添加优先级队列实现
-   - 支持优先级 Mailbox
+3. **实现 Priority Queue** ✅
+   - 添加优先级队列实现 ✅
+   - 支持优先级 Mailbox ✅
 
-4. **实现 Remote Blocklist**
-   - 添加远程节点阻止列表功能
-   - 支持自动阻止不可用节点
+4. **实现 Remote Blocklist** ✅
+   - 添加远程节点阻止列表功能 ✅
+   - 支持自动阻止不可用节点 ✅
 
 5. **实现 Cluster Informer**
    - 添加 Cluster Informer 接口和实现

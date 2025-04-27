@@ -48,4 +48,6 @@ dependencies {
     add("api", project(":proto-mailbox"))
 
     add("testImplementation", "org.slf4j:slf4j-simple:${project.extra["slf4jVersion"]}")
+    add("testImplementation", "org.mockito:mockito-core:4.11.0")
+    add("testImplementation", "org.mockito.kotlin:mockito-kotlin:4.1.0")
 }

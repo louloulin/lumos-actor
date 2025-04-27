@@ -1,5 +1,6 @@
 package actor.proto.remote
 
+import actor.proto.DeadLetterResponse
 import actor.proto.EventStream
 import actor.proto.MessageEnvelope
 import actor.proto.PID
@@ -7,6 +8,7 @@ import actor.proto.ProcessRegistry
 import actor.proto.Props
 import actor.proto.fromProducer
 import actor.proto.mailbox.newMpscUnboundedArrayMailbox
+import actor.proto.remote.blocklist.BlocklistManager
 import actor.proto.requestAwait
 import actor.proto.send
 import actor.proto.spawnNamed
@@ -24,6 +26,11 @@ object Remote {
     private val Kinds: HashMap<String, Props> = HashMap()
     lateinit var endpointManagerPid: PID
     lateinit var activatorPid: PID
+
+    /**
+     * Blocklist 管理器，用于管理远程节点的阻止列表
+     */
+    lateinit var blocklistManager: BlocklistManager
     fun getKnownKinds(): Set<String> = Kinds.keys
     fun registerKnownKind(kind: String, props: Props) {
         Kinds.put(kind, props)
@@ -59,6 +66,12 @@ object Remote {
         } else {
             _server.shutdownNow()
         }
+
+        // 关闭 Blocklist 管理器
+        if (::blocklistManager.isInitialized) {
+            blocklistManager.shutdown()
+        }
+
         logger.info("Stopped Proto.Actor server")
     }
 
@@ -73,6 +86,24 @@ object Remote {
         val boundAddress: String = "$hostname:$boundPort"
         val address: String = "${config.advertisedHostname ?: hostname}:${config.advertisedPort ?: boundPort}"
         ProcessRegistry.address = address
+
+        // 初始化 Blocklist 管理器
+        if (config.enableBlocklist) {
+            blocklistManager = BlocklistManager(this.system, config.blocklistCleanupInterval)
+            blocklistManager.initialize()
+
+            // 配置默认的阻止列表
+            val defaultBlocklist = actor.proto.remote.blocklist.FailureCountingBlocklist(
+                maxFailures = config.blocklistMaxFailures,
+                blockDuration = config.blocklistDuration
+            )
+            blocklistManager.registerBlocklist("default", defaultBlocklist)
+
+            logger.info("Blocklist enabled with max failures: ${config.blocklistMaxFailures}, duration: ${config.blocklistDuration}")
+        } else {
+            logger.info("Blocklist disabled")
+        }
+
         spawnEndpointManager(config)
         spawnActivator()
         logger.info("Starting Proto.Actor server on $boundAddress")
@@ -108,6 +139,22 @@ object Remote {
     }
 
     fun sendMessage(pid: PID, msg: Any, serializerId: Int) {
+        // 检查目标地址是否被阻止
+        if (::blocklistManager.isInitialized && blocklistManager.isBlocked(pid.address)) {
+            logger.debug { "Message not sent to blocked address: ${pid.address}" }
+
+            // 如果消息有发送者，则发送死信响应
+            val sender = when (msg) {
+                is MessageEnvelope -> msg.sender
+                else -> null
+            }
+            if (sender != null) {
+                send(sender, DeadLetterResponse(pid))
+            }
+
+            return
+        }
+
         val (message, sender) = when (msg) {
             is MessageEnvelope -> Pair(msg.message, msg.sender)
             else -> Pair(msg, null)
