@@ -57,8 +57,10 @@ class P2PIdentityLookup : IdentityLookup {
         logger.debug { "Activating actor locally: $clusterIdentity" }
 
         // 获取 kind 的激活器
-        val kind = cluster.getClusterKinds()[clusterIdentity.kind]
-            ?: throw Exception("No cluster kind found for ${clusterIdentity.kind}")
+        // 验证 kind 是否存在
+        if (!cluster.getClusterKinds().containsKey(clusterIdentity.kind)) {
+            throw Exception("No cluster kind found for ${clusterIdentity.kind}")
+        }
 
         // 激活 Actor
         val pid = PID(cluster.actorSystem.address, "${clusterIdentity.kind}/${clusterIdentity.identity}")
