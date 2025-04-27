@@ -99,7 +99,7 @@ class PlacementActor(private val lookup: DistributedHashIdentityLookup) : Actor 
                     val pid = lookup.lookup(msg.clusterIdentity)
                     sender?.let { send(it, ActivationResponse(pid)) }
                 } catch (e: Exception) {
-                    logger.error(e) { "Error activating actor ${msg.clusterIdentity}" }
+                    logger.error("Error activating actor ${msg.clusterIdentity}", e)
                     sender?.let { send(it, ActivationResponse(null)) }
                 }
             }

@@ -292,7 +292,7 @@ class GossipLoopActor(private val gossiper: Gossiper) : Actor {
                         try {
                             gossiper.gossip()
                         } catch (e: Exception) {
-                            logger.error(e) { "Error in gossip loop" }
+                            logger.error("Error in gossip loop", e)
                         }
 
                         delay(1000) // Use a fixed delay for now

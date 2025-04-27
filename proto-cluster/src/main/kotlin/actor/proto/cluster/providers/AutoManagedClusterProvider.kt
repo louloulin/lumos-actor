@@ -195,7 +195,7 @@ class MemberActor(private val provider: AutoManagedClusterProvider) : Actor {
                             // TODO: Send heartbeats to other members
 
                         } catch (e: Exception) {
-                            logger.error(e) { "Error in heartbeat loop" }
+                            logger.error("Error in heartbeat loop", e)
                         }
 
                         delay(1000)
