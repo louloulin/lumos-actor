@@ -1,5 +1,6 @@
 package actor.proto
 
+import actor.proto.logging.Logger
 import java.time.Duration
 
 /**
@@ -8,6 +9,11 @@ import java.time.Duration
  */
 
 interface Context : SpawnerContext {
+    /**
+     * Get the logger for this context
+     * @return The logger
+     */
+    val logger: Logger
     val parent: PID?
     override val self: PID
     val sender: PID?

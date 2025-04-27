@@ -32,6 +32,7 @@ dependencies {
     add("api", "com.google.protobuf:protobuf-java:${project.extra["protobufVersion"]}")
     add("api", project(":proto-mailbox"))
     add("implementation", "io.github.microutils:kotlin-logging:${project.extra["kotlinLoggingVersion"]}")
+    add("implementation", "ch.qos.logback:logback-classic:1.4.7")
     add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.extra["coroutinesVersion"]}")
     add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${project.extra["coroutinesVersion"]}")
 

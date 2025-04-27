@@ -1,15 +1,28 @@
 package actor.proto
 
+import actor.proto.logging.DefaultLoggerFactory
+import actor.proto.logging.Logger
 import actor.proto.mailbox.MessageInvoker
 import actor.proto.mailbox.ResumeMailbox
 import actor.proto.mailbox.SuspendMailbox
 import actor.proto.mailbox.SystemMessage
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import java.time.Duration
 import java.util.*
-private val logger = KotlinLogging.logger {}
-class ActorContext(private val producer: () -> Actor, override val self: PID, private val supervisorStrategy: SupervisorStrategy, receiveMiddleware: List<ReceiveMiddleware>, senderMiddleware: List<SenderMiddleware>, override val parent: PID?) : MessageInvoker, Context, SenderContext, Supervisor {
+class ActorContext(
+    private val producer: () -> Actor,
+    override val self: PID,
+    private val supervisorStrategy: SupervisorStrategy,
+    receiveMiddleware: List<ReceiveMiddleware>,
+    senderMiddleware: List<SenderMiddleware>,
+    override val parent: PID?,
+    private val system: ActorSystem? = null
+) : MessageInvoker, Context, SenderContext, Supervisor {
+
+    /**
+     * Logger for this actor context
+     */
+    override val logger: Logger = system?.logger?.withContext("pid" to self) ?: DefaultLoggerFactory.getLogger("Actor-${self.id}")
     private var _children: Set<PID> = setOf()
     private var watchers: Set<PID> = setOf()
     private var _receiveTimeoutTimer: AsyncTimer? = null
@@ -328,7 +341,7 @@ class ActorContext(private val producer: () -> Actor, override val self: PID, pr
     }
 
     private fun handleRootFailure(failure: Failure) {
-        logger.warn("Handling root failure for " + failure.who.toShortString())
+        logger.warning("Handling root failure for " + failure.who.toShortString())
         Supervision.defaultStrategy.handleFailure(self.actorSystem(), this, failure.who, failure.restartStatistics, failure.reason, failure.message)
     }
 

@@ -4,6 +4,8 @@ import actor.proto.diagnostics.Diagnostics
 import actor.proto.diagnostics.MatchType
 import actor.proto.diagnostics.ProcessInfo
 import actor.proto.guardian.GuardiansValue
+import actor.proto.logging.DefaultLoggerFactory
+import actor.proto.logging.Logger
 import actor.proto.metrics.MetricsRegistry
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -15,6 +17,10 @@ import kotlinx.coroutines.future.await
  * It provides methods for creating, finding, and managing actors.
  */
 class ActorSystem(val name: String) {
+    /**
+     * Logger for the actor system
+     */
+    val logger: Logger = DefaultLoggerFactory.getLogger("ActorSystem-$name")
     private val processRegistryImpl = ProcessRegistryImpl(this)
 
     /**
@@ -43,6 +49,8 @@ class ActorSystem(val name: String) {
             }
             deadLetter
         }
+
+        logger.info("Actor system started", "id" to name)
     }
 
     /**
@@ -72,6 +80,8 @@ class ActorSystem(val name: String) {
         metrics.counter("actor.created", mapOf("system" to this.name)).inc()
         metrics.histogram("actor.creation.time", mapOf("system" to this.name)).observe(duration / 1_000_000.0)
 
+        logger.debug("Actor created", "pid" to pid, "duration_ms" to (duration / 1_000_000.0))
+
         return pid
     }
 
@@ -88,7 +98,7 @@ class ActorSystem(val name: String) {
         val dispatcher = props.dispatcher
         val process = LocalProcess(mailbox)
         val self = processRegistryImpl.put(name, process)
-        val ctx = ActorContext(props.producer!!, self, props.supervisorStrategy, props.receiveMiddleware, props.senderMiddleware, null)
+        val ctx = ActorContext(props.producer!!, self, props.supervisorStrategy, props.receiveMiddleware, props.senderMiddleware, null, this)
         mailbox.registerHandlers(ctx, dispatcher)
         mailbox.postSystemMessage(Started)
         mailbox.start()
@@ -102,6 +112,8 @@ class ActorSystem(val name: String) {
             "system" to this.name,
             "actor_name" to name
         )).observe(duration / 1_000_000.0)
+
+        logger.debug("Named actor created", "pid" to self, "name" to name, "duration_ms" to (duration / 1_000_000.0))
 
         return self
     }
@@ -119,6 +131,8 @@ class ActorSystem(val name: String) {
             "system" to this.name,
             "actor_id" to pid.id
         )).inc()
+
+        logger.debug("Actor stopped", "pid" to pid)
     }
 
     /**
@@ -126,6 +140,7 @@ class ActorSystem(val name: String) {
      * @param pid The PID of the actor to poison
      */
     fun poison(pid: PID) {
+        logger.debug("Sending poison pill", "pid" to pid)
         send(pid, PoisonPill.getDefaultInstance())
     }
 

@@ -1,5 +1,6 @@
 package actor.proto
 
+import actor.proto.logging.Logger
 import actor.proto.middleware.SpawnFunc
 import actor.proto.middleware.SpawnMiddleware
 import actor.proto.middleware.makeSpawnMiddlewareChain
@@ -12,6 +13,10 @@ import java.time.Duration
  * @param actorSystem Actor 系统
  */
 class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext {
+    /**
+     * Logger for the root context
+     */
+    override val logger: Logger = actorSystem.logger.withContext("context" to "root")
     private var _headers: Map<String, String> = mapOf()
     private var senderMiddleware: Send? = null
     private var spawnMiddleware: SpawnFunc? = null

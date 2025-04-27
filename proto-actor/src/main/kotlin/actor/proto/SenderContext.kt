@@ -1,6 +1,13 @@
 package actor.proto
 
+import actor.proto.logging.Logger
+
 interface SenderContext {
+    /**
+     * Get the logger for this context
+     * @return The logger
+     */
+    val logger: Logger
     val message: Any?
     val headers: MessageHeader?
     val sender: PID?

@@ -1,9 +1,16 @@
 package actor.proto
 
+import actor.proto.logging.DefaultLoggerFactory
+import actor.proto.logging.Logger
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
 class ActorClient(messageHeader: MessageHeader = MessageHeader.EMPTY, senderMiddleware: List<SenderMiddleware> = listOf()) : SenderContext {
+
+    /**
+     * Logger for the actor client
+     */
+    override val logger: Logger = DefaultLoggerFactory.getLogger("ActorClient")
 
     private val senderMiddleware: Send? = when {
         senderMiddleware.isEmpty() -> null
