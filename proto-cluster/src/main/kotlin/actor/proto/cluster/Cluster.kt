@@ -2,6 +2,7 @@ package actor.proto.cluster
 
 import actor.proto.ActorSystem
 import actor.proto.PID
+import actor.proto.cluster.informer.Informer
 import actor.proto.remote.Remote
 import actor.proto.remote.RemoteConfig
 import mu.KotlinLogging
@@ -25,6 +26,7 @@ class Cluster(
     lateinit var gossip: Gossiper
     lateinit var pubSub: PubSub
     lateinit var remote: Remote
+    lateinit var informer: Informer
 
     /**
      * Start the cluster as a member.
@@ -46,6 +48,10 @@ class Cluster(
 
         // Initialize pubsub
         pubSub = PubSub(this)
+
+        // Initialize informer
+        informer = config.informer
+        informer.initialize(this)
 
         // Initialize kinds
         initKinds()
@@ -78,6 +84,10 @@ class Cluster(
         // Initialize pubsub
         pubSub = PubSub(this)
 
+        // Initialize informer
+        informer = config.informer
+        informer.initialize(this)
+
         // Start remote
         remote.start(config.remoteConfig.hostname, config.remoteConfig.port)
 
@@ -94,6 +104,9 @@ class Cluster(
 
         // Shutdown cluster provider
         val result = config.clusterProvider.shutdown(graceful)
+
+        // Shutdown informer
+        informer.shutdown()
 
         // Shutdown remote
         if (graceful) {

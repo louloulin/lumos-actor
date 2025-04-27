@@ -63,7 +63,7 @@
 | Grain 支持 | ✅ | ✅ | 完成 | - |
 | PubSub | ✅ | ✅ | 完成 | - |
 | Consensus 机制 | ✅ | ❌ | 缺失 | 高 |
-| Informer | ✅ | ❌ | 缺失 | 中 |
+| Informer | ✅ | ✅ | 完成 | - |
 | PubSub Batch | ✅ | ❌ | 缺失 | 中 |
 | PubSub Extensions | ✅ | ❌ | 缺失 | 中 |
 | Rendezvous 哈希 | ✅ | ❌ | 缺失 | 低 |
@@ -153,9 +153,9 @@
    - 添加远程节点阻止列表功能 ✅
    - 支持自动阻止不可用节点 ✅
 
-5. **实现 Cluster Informer**
-   - 添加 Cluster Informer 接口和实现
-   - 支持集群状态变更通知
+5. **实现 Cluster Informer** ✅
+   - 添加 Cluster Informer 接口和实现 ✅
+   - 支持集群状态变更通知 ✅
 
 6. **实现 PubSub Batch 和 Extensions**
    - 添加批处理消息支持

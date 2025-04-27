@@ -1,5 +1,7 @@
 package actor.proto.cluster
 
+import actor.proto.cluster.informer.DefaultInformer
+import actor.proto.cluster.informer.Informer
 import actor.proto.remote.RemoteConfig
 import java.time.Duration
 
@@ -17,7 +19,8 @@ data class ClusterConfig(
     val gossipFanOut: Int = 3,
     val gossipMaxSend: Int = 50,
     val heartbeatExpiration: Duration = Duration.ofSeconds(20),
-    val memberStrategyBuilder: (Cluster, String) -> MemberStrategy = { _, _ -> RoundRobinMemberStrategy() }
+    val memberStrategyBuilder: (Cluster, String) -> MemberStrategy = { _, _ -> RoundRobinMemberStrategy() },
+    val informer: Informer = DefaultInformer()
 ) {
     companion object {
         /**
@@ -42,7 +45,7 @@ data class ClusterConfig(
                 identityLookup = identityLookup,
                 remoteConfig = remoteConfig
             )
-            
+
             return options.fold(config) { acc, option ->
                 option.apply(acc)
             }
@@ -129,5 +132,15 @@ class WithHeartbeatExpiration(private val expiration: Duration) : ClusterConfigO
 class WithMemberStrategyBuilder(private val builder: (Cluster, String) -> MemberStrategy) : ClusterConfigOption {
     override fun apply(config: ClusterConfig): ClusterConfig {
         return config.copy(memberStrategyBuilder = builder)
+    }
+}
+
+/**
+ * WithInformer sets the informer for the cluster.
+ * @param informer The informer to use.
+ */
+class WithInformer(private val informer: Informer) : ClusterConfigOption {
+    override fun apply(config: ClusterConfig): ClusterConfig {
+        return config.copy(informer = informer)
     }
 }
