@@ -1,5 +1,8 @@
 package actor.proto
 
+import actor.proto.extensions.ContextExtension
+import actor.proto.extensions.ContextExtensionID
+import actor.proto.extensions.ContextExtensions
 import actor.proto.logging.DefaultLoggerFactory
 import actor.proto.logging.Logger
 import actor.proto.mailbox.MessageInvoker
@@ -31,6 +34,7 @@ class ActorContext(
     private var state: ContextState = ContextState.None
     override lateinit var actor: Actor
     private var _message: Any = NullMessage
+    private val extensions = ContextExtensions()
     private val receiveMiddleware: Receive? = when {
         receiveMiddleware.isEmpty() -> null
         else -> receiveMiddleware
@@ -379,6 +383,23 @@ class ActorContext(
         invokeUserMessage(Started)
         sendSystemMessage(self, ResumeMailbox)
         while (stash.isNotEmpty()) invokeUserMessage(stash.pop())
+    }
+
+    /**
+     * 获取指定ID的上下文扩展
+     * @param id 扩展ID
+     * @return 扩展实例，如果不存在则返回null
+     */
+    override fun get(id: ContextExtensionID): ContextExtension? {
+        return extensions.get(id)
+    }
+
+    /**
+     * 设置上下文扩展
+     * @param extension 扩展实例
+     */
+    override fun set(extension: ContextExtension) {
+        extensions.set(extension)
     }
 
     init {

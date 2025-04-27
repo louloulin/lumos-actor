@@ -1,5 +1,8 @@
 package actor.proto
 
+import actor.proto.extensions.ContextExtension
+import actor.proto.extensions.ContextExtensionID
+import actor.proto.extensions.ContextExtensions
 import actor.proto.logging.Logger
 import actor.proto.middleware.SpawnFunc
 import actor.proto.middleware.SpawnMiddleware
@@ -12,7 +15,7 @@ import java.time.Duration
  * RootContext 是顶级 Context 实现，用于创建顶级 Actor
  * @param actorSystem Actor 系统
  */
-class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext {
+class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext, ExtensionContext {
     /**
      * Logger for the root context
      */
@@ -21,6 +24,7 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
     private var senderMiddleware: Send? = null
     private var spawnMiddleware: SpawnFunc? = null
     private var guardianStrategy: SupervisorStrategy? = null
+    private val extensions = ContextExtensions()
 
     /**
      * 获取当前 Actor 的 PID
@@ -119,6 +123,23 @@ class RootContext(val actorSystem: ActorSystem) : SenderContext, SpawnerContext 
         ctx.spawnMiddleware = this.spawnMiddleware
         ctx.guardianStrategy = strategy
         return ctx
+    }
+
+    /**
+     * 获取指定ID的上下文扩展
+     * @param id 扩展ID
+     * @return 扩展实例，如果不存在则返回null
+     */
+    override fun get(id: ContextExtensionID): ContextExtension? {
+        return extensions.get(id)
+    }
+
+    /**
+     * 设置上下文扩展
+     * @param extension 扩展实例
+     */
+    override fun set(extension: ContextExtension) {
+        extensions.set(extension)
     }
 
     /**

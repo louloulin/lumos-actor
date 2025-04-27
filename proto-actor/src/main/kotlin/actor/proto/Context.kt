@@ -1,5 +1,7 @@
 package actor.proto
 
+import actor.proto.extensions.ContextExtension
+import actor.proto.extensions.ContextExtensionID
 import actor.proto.logging.Logger
 import java.time.Duration
 
@@ -8,7 +10,7 @@ import java.time.Duration
  * 提供了 Actor 与其环境交互所需的方法
  */
 
-interface Context : SpawnerContext {
+interface Context : SpawnerContext, ExtensionContext {
     /**
      * Get the logger for this context
      * @return The logger
@@ -55,5 +57,24 @@ interface Context : SpawnerContext {
      * @param continuation The function to call when the future completes
      */
     fun <T> reenterAfter(future: Future<T>, continuation: (T?, Throwable?) -> Unit)
+}
+
+/**
+ * ExtensionContext 是用于扩展上下文的接口
+ * 提供了获取和设置上下文扩展的方法
+ */
+interface ExtensionContext {
+    /**
+     * 获取指定ID的上下文扩展
+     * @param id 扩展ID
+     * @return 扩展实例，如果不存在则返回null
+     */
+    fun get(id: ContextExtensionID): ContextExtension?
+
+    /**
+     * 设置上下文扩展
+     * @param extension 扩展实例
+     */
+    fun set(extension: ContextExtension)
 }
 

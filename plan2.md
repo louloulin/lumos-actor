@@ -85,7 +85,7 @@
 | Metrics | ✅ | ❌ | 缺失 | 高 |
 | Stream 处理 | ✅ | ❌ | 缺失 | 中 |
 | Native Image 支持 | ❌ | ✅ | 超前 | - |
-| Context Extensions | ✅ | ❌ | 缺失 | 低 |
+| Context Extensions | ✅ | ✅ | 已实现 | 低 |
 | Logging | ✅ | ✅ | 已实现 | 中 |
 
 ## 2. 代码质量与测试覆盖率
@@ -184,9 +184,9 @@
    - 添加消息批处理支持 ✅
    - 优化批量消息处理性能 ✅
 
-2. **实现 Throttler**
-   - 添加消息节流功能
-   - 支持可配置的节流策略
+2. **实现 Throttler** ✅
+   - 添加消息节流功能 ✅
+   - 支持可配置的节流策略 ✅
 
 3. **实现 Response Status Code** ✅
    - 添加远程响应状态码 ✅
@@ -196,9 +196,9 @@
    - 添加 Rendezvous 哈希算法 ✅
    - 优化集群路由 ✅
 
-5. **实现 Context Extensions**
-   - 添加上下文扩展机制
-   - 支持自定义上下文功能
+5. **实现 Context Extensions** ✅
+   - 添加上下文扩展机制 ✅
+   - 支持自定义上下文功能 ✅
 
 ## 4. 实施时间表
 
@@ -224,10 +224,10 @@
 
 ### 第四阶段（9-12个月）
 - 实现 Message Batch ✅
-- 实现 Throttler
+- 实现 Throttler ✅
 - 实现 Response Status Code ✅
 - 实现 Rendezvous 哈希 ✅
-- 实现 Context Extensions
+- 实现 Context Extensions ✅
 
 ## 5. Process Registry 详细分析与优化计划
 
