@@ -15,14 +15,7 @@ dependencies {
     api(project(":proto-cluster"))
 
 
-    // libp2p 依赖
-    implementation("io.libp2p:jvm-libp2p-minimal:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-core:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-crypto:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-discovery:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-protocol:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-pubsub:0.9.0")
-    implementation("io.libp2p:jvm-libp2p-kad-dht:0.9.0")
+    // 暂时移除 libp2p 依赖，简化实现
 
     // 其他依赖
     implementation("io.github.microutils:kotlin-logging:2.0.11")
