@@ -1,6 +1,6 @@
 package actor.proto.plugin
 
-// 使用测试用的ActorSystem
+import actor.proto.ActorSystem
 import org.pf4j.DefaultPluginManager
 import org.pf4j.PluginManager
 import org.pf4j.PluginWrapper
@@ -37,12 +37,12 @@ class ProtoPluginManager private constructor(pluginsRoot: Path) {
      * 初始化所有插件
      * @param system Actor系统
      */
-    fun initPlugins(system: Any) {
+    fun initPlugins(system: ActorSystem) {
         pluginManager.plugins.forEach { plugin ->
             // 使用反射调用init方法
             val plugin = plugin.plugin
             if (plugin is ProtoPlugin) {
-                val initMethod = plugin.javaClass.getMethod("init", Any::class.java)
+                val initMethod = plugin.javaClass.getMethod("init", ActorSystem::class.java)
                 initMethod.invoke(plugin, system)
             }
         }

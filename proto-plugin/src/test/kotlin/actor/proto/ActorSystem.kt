@@ -6,6 +6,9 @@ package actor.proto
 class ActorSystem private constructor(val name: String) {
     val root = RootContext()
 
+    // 存储所有中间件
+    private val receiveMiddlewares = mutableListOf<ReceiveMiddleware>()
+
     companion object {
         /**
          * 创建ActorSystem实例
@@ -21,8 +24,42 @@ class ActorSystem private constructor(val name: String) {
      * @param plugin 插件实例
      */
     fun registerPlugin(plugin: Any) {
-        // 测试用的空实现
+        // 获取插件ID
+        try {
+            val idMethod = plugin.javaClass.getMethod("id")
+            val id = idMethod.invoke(plugin) as String
+
+            // 存储插件
+            plugins[id] = plugin
+
+            // 调用插件的init方法
+            val initMethod = plugin.javaClass.getMethod("init", ActorSystem::class.java)
+            initMethod.invoke(plugin, this)
+
+            // 检查插件是否实现了ReceiveMiddlewarePluginInterface接口
+            if (plugin.javaClass.interfaces.any { it.name.endsWith("ReceiveMiddlewarePluginInterface") }) {
+                // 获取中间件
+                val getMiddlewareMethod = plugin.javaClass.getMethod("receiveMiddleware")
+                val middleware = getMiddlewareMethod.invoke(plugin) as ReceiveMiddleware
+
+                // 添加中间件
+                receiveMiddlewares.add(middleware)
+
+                // 将中间件添加到RootContext
+                root.addMiddleware(middleware)
+
+                println("Added receive middleware from plugin: ${plugin.javaClass.simpleName}")
+            }
+
+            println("Plugin registered and initialized: ${plugin.javaClass.simpleName} (id: $id)")
+        } catch (e: Exception) {
+            println("Failed to initialize plugin: ${e.message}")
+            e.printStackTrace()
+        }
     }
+
+    // 存储所有插件
+    private val plugins = mutableMapOf<String, Any>()
 
     /**
      * 获取插件
@@ -30,8 +67,7 @@ class ActorSystem private constructor(val name: String) {
      * @return 插件实例
      */
     fun getPlugin(id: String): Any? {
-        // 测试用的空实现
-        return null
+        return plugins[id]
     }
 
     /**

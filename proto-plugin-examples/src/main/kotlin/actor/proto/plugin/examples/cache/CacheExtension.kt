@@ -1,5 +1,6 @@
 package actor.proto.plugin.examples.cache
 
+import actor.proto.ActorSystem
 import actor.proto.Context
 import actor.proto.PID
 import actor.proto.Receive
@@ -34,7 +35,7 @@ object CacheManager {
     private val logger = LoggerFactory.getLogger(CacheManager::class.java)
     private val caches = ConcurrentHashMap<String, MutableMap<Any, CacheEntry<Any>>>()
     private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-    
+
     init {
         // 定期清理过期缓存
         scheduler.scheduleAtFixedRate(
@@ -44,7 +45,7 @@ object CacheManager {
             TimeUnit.MINUTES
         )
     }
-    
+
     /**
      * 获取缓存
      * @param cacheId 缓存ID
@@ -54,16 +55,16 @@ object CacheManager {
     fun get(cacheId: String, key: Any): Any? {
         val cache = caches[cacheId] ?: return null
         val entry = cache[key] ?: return null
-        
+
         // 检查是否过期
         if (entry.expireAt < System.currentTimeMillis()) {
             cache.remove(key)
             return null
         }
-        
+
         return entry.value
     }
-    
+
     /**
      * 设置缓存
      * @param cacheId 缓存ID
@@ -76,7 +77,7 @@ object CacheManager {
         val expireAt = System.currentTimeMillis() + ttl.toMillis()
         cache[key] = CacheEntry(value, expireAt)
     }
-    
+
     /**
      * 清除缓存
      * @param cacheId 缓存ID
@@ -86,14 +87,14 @@ object CacheManager {
         val cache = caches[cacheId] ?: return
         cache.remove(key)
     }
-    
+
     /**
      * 清除所有缓存
      */
     fun clear() {
         caches.clear()
     }
-    
+
     /**
      * 清理过期条目
      */
@@ -103,11 +104,11 @@ object CacheManager {
             val expiredKeys = cache.entries
                 .filter { it.value.expireAt < now }
                 .map { it.key }
-            
+
             expiredKeys.forEach { cache.remove(it) }
         }
     }
-    
+
     /**
      * 关闭缓存管理器
      */
@@ -124,22 +125,34 @@ object CacheManager {
 @Extension
 class CacheReceiveMiddleware : ReceiveMiddlewareExtension {
     private val logger = LoggerFactory.getLogger(CacheReceiveMiddleware::class.java)
-    
+
+    override fun id(): String = "cache-receive-middleware"
+
+    override fun version(): String = "1.0.0"
+
+    override fun init(system: ActorSystem) {
+        logger.info("Cache receive middleware initialized")
+    }
+
+    override fun shutdown() {
+        logger.info("Cache receive middleware shutdown")
+    }
+
     // 默认缓存配置
     private val defaultTtl = Duration.ofMinutes(5)
-    
-    override fun receiveMiddleware(): ReceiveMiddleware = { next ->
+
+    override fun getReceiveMiddleware(): ReceiveMiddleware = { next ->
         { ctx ->
             val actorType = ctx.actor.javaClass.simpleName
             val messageType = ctx.message.javaClass.simpleName
             val cacheId = "receive:$actorType"
-            
+
             // 检查是否可缓存
             if (isCacheable(ctx.message)) {
                 // 尝试从缓存获取
                 val cacheKey = getCacheKey(ctx.message)
                 val cachedResponse = CacheManager.get(cacheId, cacheKey)
-                
+
                 if (cachedResponse != null) {
                     // 使用缓存的响应
                     logger.debug("Cache hit for actor: {}, message: {}", actorType, messageType)
@@ -147,7 +160,7 @@ class CacheReceiveMiddleware : ReceiveMiddlewareExtension {
                 } else {
                     // 处理消息
                     next(ctx)
-                    
+
                     // 缓存响应
                     if (ctx.sender != null) {
                         // 注意：这里假设响应已经通过ctx.respond发送
@@ -161,7 +174,7 @@ class CacheReceiveMiddleware : ReceiveMiddlewareExtension {
             }
         }
     }
-    
+
     /**
      * 检查消息是否可缓存
      * @param message 消息
@@ -172,7 +185,7 @@ class CacheReceiveMiddleware : ReceiveMiddlewareExtension {
         // 例如，只缓存查询类消息，不缓存命令类消息
         return message is String && message.startsWith("query:")
     }
-    
+
     /**
      * 获取缓存键
      * @param message 消息

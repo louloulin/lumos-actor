@@ -1,14 +1,50 @@
 package actor.proto
 
 /**
- * 接收中间件类型
+ * 接收函数接口
  */
-typealias Receive = suspend (Context) -> Unit
+fun interface Receive {
+    suspend operator fun invoke(ctx: Context)
+}
 
 /**
- * 接收中间件
+ * 创建Receive实例
  */
-typealias ReceiveMiddleware = (next: Receive) -> Receive
+fun createReceive(block: suspend (Context) -> Unit): Receive {
+    return object : Receive {
+        override suspend fun invoke(ctx: Context) {
+            block(ctx)
+        }
+    }
+}
+
+/**
+ * 接收中间件接口
+ */
+fun interface ReceiveMiddleware {
+    operator fun invoke(next: Receive): Receive
+}
+
+/**
+ * 创建ReceiveMiddleware实例
+ */
+fun createReceiveMiddleware(block: (Receive) -> Receive): ReceiveMiddleware {
+    return object : ReceiveMiddleware {
+        override fun invoke(next: Receive): Receive {
+            return block(next)
+        }
+    }
+}
+
+/**
+ * 应用中间件
+ * @param middleware 中间件
+ * @param next 下一个处理函数
+ * @return 处理函数
+ */
+fun applyReceiveMiddleware(middleware: ReceiveMiddleware, next: Receive): Receive {
+    return middleware.invoke(next)
+}
 
 /**
  * 发送函数类型
