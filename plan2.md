@@ -65,7 +65,7 @@
 | Consensus 机制 | ✅ | ❌ | 缺失 | 高 |
 | Informer | ✅ | ✅ | 完成 | - |
 | PubSub Batch | ✅ | ✅ | 完成 | - |
-| PubSub Extensions | ✅ | ❌ | 缺失 | 中 |
+| PubSub Extensions | ✅ | ✅ | 完成 | - |
 | Rendezvous 哈希 | ✅ | ❌ | 缺失 | 低 |
 
 ### 1.5 Persistence 功能
@@ -157,9 +157,9 @@
    - 添加 Cluster Informer 接口和实现 ✅
    - 支持集群状态变更通知 ✅
 
-6. **实现 PubSub Batch 和 Extensions**
+6. **实现 PubSub Batch 和 Extensions** ✅
    - 添加批处理消息支持 ✅
-   - 实现 PubSub 扩展机制
+   - 实现 PubSub 扩展机制 ✅
 
 7. **实现 Persistence Providers** ✅
    - 添加内存持久化提供程序 ✅

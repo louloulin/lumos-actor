@@ -30,6 +30,19 @@ tasks.register<JavaExec>("runProtobufPersistenceExample") {
     mainClass.set("actor.proto.examples.persistence.ProtobufPersistenceExampleKt")
 }
 
+// Task to run PubSubExtensionsExample
+tasks.register<JavaExec>("runPubSubExtensionsExample") {
+    group = "application"
+    description = "Run the PubSubExtensionsExample"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("actor.proto.examples.pubsub.PubSubExtensionsExampleKt")
+    jvmArgs = listOf("-Xms512m", "-Xmx1024m")
+    // Print the classpath for debugging
+    doFirst {
+        println("Classpath: ${classpath.asPath}")
+    }
+}
+
 graalvmNative {
     binaries {
         named("main") {
