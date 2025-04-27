@@ -18,6 +18,16 @@ dependencies {
     add("implementation", project(":proto-router"))
     add("implementation", project(":proto-remote"))
     add("implementation", project(":proto-mailbox"))
+    add("implementation", project(":proto-persistence"))
+    add("implementation", project(":proto-cluster"))
+}
+
+// Task to run ProtobufPersistenceExample
+tasks.register<JavaExec>("runProtobufPersistenceExample") {
+    group = "application"
+    description = "Run the ProtobufPersistenceExample"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("actor.proto.examples.persistence.ProtobufPersistenceExampleKt")
 }
 
 graalvmNative {

@@ -1,4 +1,4 @@
-package persistence
+package actor.proto.examples.persistence
 
 import actor.proto.ActorSystem
 import actor.proto.Context
