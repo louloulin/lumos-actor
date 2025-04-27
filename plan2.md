@@ -18,10 +18,10 @@
 | Future/Task | ✅ | ✅ | 完成 | - |
 | Behavior 切换 | ✅ | ✅ | 完成 | - |
 | Middleware 链 | ✅ | ✅ | 完成 | - |
-| Guardian Actor | ✅ | ❌ | 缺失 | 中 |
+| Guardian Actor | ✅ | ✅ | 已实现 | 中 |
 | Message Batch | ✅ | ✅ | 已实现 | 低 |
 | PID Set | ✅ | ✅ | 完成 | - |
-| Throttler | ✅ | ❌ | 缺失 | 低 |
+| Throttler | ✅ | ✅ | 已实现 | 低 |
 | Bounded/Unbounded Mailbox | ✅ | ✅ | 完成 | - |
 | Priority Queue | ✅ | ✅ | 完成 | - |
 
@@ -82,8 +82,8 @@
 |------|--------------|-------------------|------|--------|
 | Scheduler/Timer | ✅ | ✅ | 完成 | - |
 | EventStream | ✅ | ✅ | 完成 | - |
-| Metrics | ✅ | ❌ | 缺失 | 高 |
-| Stream 处理 | ✅ | ❌ | 缺失 | 中 |
+| Metrics | ✅ | ✅ | 已实现 | 高 |
+| Stream 处理 | ✅ | ✅ | 已实现 | 中 |
 | Native Image 支持 | ❌ | ✅ | 超前 | - |
 | Context Extensions | ✅ | ✅ | 已实现 | 低 |
 | Logging | ✅ | ✅ | 已实现 | 中 |
