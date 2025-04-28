@@ -36,6 +36,11 @@ dependencies {
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
     implementation("com.sksamuel.hoplite:hoplite-yaml:2.7.5")
 
+    // Jackson
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+
     // Database
     implementation("org.postgresql:postgresql:42.6.0")
     implementation("mysql:mysql-connector-java:8.0.33")
@@ -89,8 +94,8 @@ tasks.register<JavaExec>("runNativeApp") {
 graalvmNative {
     binaries {
         named("main") {
-            imageName.set("dataflare-ultra-minimal")
-            mainClass.set("com.dataflare.native.UltraMinimalNativeApp")
+            imageName.set("dataflare")
+            mainClass.set("com.dataflare.native.NativeApp")
             debug.set(true) // 开发阶段启用调试信息
             buildArgs.add("--verbose")
             buildArgs.add("--no-fallback")
@@ -100,7 +105,12 @@ graalvmNative {
             buildArgs.add("-H:+RemoveSaturatedTypeFlows")
             buildArgs.add("-H:-AddAllCharsets")
             buildArgs.add("-H:+IncludeAllTimeZones")
-            // 不使用任何JMX或日志功能
+            buildArgs.add("-H:+JNI")
+            buildArgs.add("-H:+ReportUnsupportedElementsAtRuntime")
+            buildArgs.add("-H:+AllowIncompleteClasspath")
+            buildArgs.add("--initialize-at-build-time=org.slf4j,ch.qos.logback,org.apache.logging.log4j,org.apache.logging.slf4j,mu,com.fasterxml.jackson")
+            buildArgs.add("--initialize-at-run-time=io.netty,com.sun.jmx,com.sun.management")
+            buildArgs.add("--allow-incomplete-classpath")
         }
     }
     metadataRepository {

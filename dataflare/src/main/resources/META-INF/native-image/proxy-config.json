@@ -6,5 +6,17 @@
   ["java.sql.Connection"],
   ["java.sql.Statement"],
   ["java.sql.ResultSet"],
-  ["java.sql.Driver"]
+  ["java.sql.Driver"],
+  ["java.lang.reflect.InvocationHandler"],
+  ["java.util.function.Function"],
+  ["java.util.function.Supplier"],
+  ["java.util.function.Consumer"],
+  ["java.util.function.BiConsumer"],
+  ["java.util.function.BiFunction"],
+  ["java.util.function.Predicate"],
+  ["java.util.function.BiPredicate"],
+  ["java.util.Comparator"],
+  ["java.lang.Runnable"],
+  ["java.util.concurrent.Callable"],
+  ["kotlinx.coroutines.flow.Flow"]
 ]

@@ -26,6 +26,12 @@
         "pattern": "\\Qconfig/.*\\E"
       },
       {
+        "pattern": "\\Qinput/.*\\E"
+      },
+      {
+        "pattern": "\\Qoutput/.*\\E"
+      },
+      {
         "pattern": "\\Q.*.yaml\\E"
       },
       {
@@ -36,6 +42,15 @@
       },
       {
         "pattern": "\\Q.*.properties\\E"
+      },
+      {
+        "pattern": "\\Q.*.dsl\\E"
+      },
+      {
+        "pattern": "\\Q.*.csv\\E"
+      },
+      {
+        "pattern": "\\Q.*.conf\\E"
       }
     ]
   },
