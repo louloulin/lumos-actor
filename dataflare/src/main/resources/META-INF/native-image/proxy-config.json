@@ -1,0 +1,10 @@
+[
+  ["com.dataflare.connectors.Input"],
+  ["com.dataflare.connectors.Output"],
+  ["com.dataflare.processors.Processor"],
+  ["com.dataflare.workflow.WorkflowEngine"],
+  ["java.sql.Connection"],
+  ["java.sql.Statement"],
+  ["java.sql.ResultSet"],
+  ["java.sql.Driver"]
+]

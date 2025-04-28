@@ -1,0 +1,41 @@
+workflow:
+  name: "simple-native-workflow"
+  inputs:
+    file_source:
+      type: "file"
+      config:
+        path: "input/data.json"
+        format: "text"
+  
+  processors:
+    parse_json:
+      type: "json"
+      inputs: ["file_source"]
+      config:
+        operation: "parse"
+        field: "content"
+        arrayAsItems: true
+    
+    filter_items:
+      type: "filter"
+      inputs: ["parse_json"]
+      config:
+        condition: "items.price > 50"
+  
+  outputs:
+    file_sink:
+      type: "file"
+      inputs: ["filter_items"]
+      config:
+        path: "output/filtered_data.json"
+        format: "json"
+  
+  connections:
+    - from: "file_source"
+      to: "parse_json"
+    - from: "parse_json"
+      to: "filter_items"
+    - from: "filter_items"
+      to: "file_sink"
+  
+  engineName: "flow"

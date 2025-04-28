@@ -1,5 +1,6 @@
 plugins {
     application
+    id("org.graalvm.buildtools.native") version "0.10.1"
 }
 
 description = "DataFlare - Data Processing Platform"
@@ -27,7 +28,9 @@ dependencies {
 
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.22.1")
 
     // Config
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
@@ -65,6 +68,44 @@ kotlin {
 
 application {
     mainClass.set("com.dataflare.MainKt")
+}
+
+// 添加 Native 应用程序任务
+tasks.register<JavaExec>("runNativeApp") {
+    group = "application"
+    description = "Runs the Native application"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.dataflare.native.NativeApp")
+
+    // 传递命令行参数
+    if (project.hasProperty("args")) {
+        args = project.property("args").toString().split(",")
+    } else {
+        args = listOf("src/main/resources/workflows/simple-workflow.yaml")
+    }
+}
+
+// GraalVM Native Image 配置
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("dataflare-ultra-minimal")
+            mainClass.set("com.dataflare.native.UltraMinimalNativeApp")
+            debug.set(true) // 开发阶段启用调试信息
+            buildArgs.add("--verbose")
+            buildArgs.add("--no-fallback")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+            buildArgs.add("-H:+AllowDeprecatedBuilderClassesOnImageClasspath")
+            buildArgs.add("-H:MaxDuplicationFactor=100.0")
+            buildArgs.add("-H:+RemoveSaturatedTypeFlows")
+            buildArgs.add("-H:-AddAllCharsets")
+            buildArgs.add("-H:+IncludeAllTimeZones")
+            // 不使用任何JMX或日志功能
+        }
+    }
+    metadataRepository {
+        enabled.set(true)
+    }
 }
 
 // 添加一个运行任务，允许通过命令行参数指定主类
