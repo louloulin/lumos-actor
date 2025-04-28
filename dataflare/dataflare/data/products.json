@@ -1,0 +1,4 @@
+[
+  {"id": 1, "name": "Smartphone X", "price": 799.99, "category": "Electronics", "stock": 120},
+  {"id": 2, "name": "Coffee Maker", "price": 49.99, "category": "Home", "stock": 35}
+]

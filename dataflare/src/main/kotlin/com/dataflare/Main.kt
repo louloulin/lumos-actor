@@ -338,7 +338,7 @@ private suspend fun demoDataProcessingSystem() {
 
     if (validationResult.isValid) {
         val compiledWorkflow = system.compileDsl(dslScript)
-        logger.info { "Compiled workflow: ${compiledWorkflow.name}" }
+        logger.info { "Compiled workflow: ${compiledWorkflow.config.name}" }
     }
 
     // 停止系统

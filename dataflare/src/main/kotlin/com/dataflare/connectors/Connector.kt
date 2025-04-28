@@ -5,13 +5,15 @@ import com.dataflare.core.ProcessingResult
 import kotlinx.serialization.Serializable
 
 /**
- * 连接器上下文，提供连接器运行时所需的上下文信息
+ * 连接器上下文实现，提供连接器运行时所需的上下文信息
  */
-class Context(
+class ConnectorContext(
     val workflowId: String,
     val connectorId: String,
     val metadata: Map<String, String> = emptyMap()
-)
+) : Context {
+    override val properties: MutableMap<String, Any> = mutableMapOf()
+}
 
 /**
  * 连接器配置基类

@@ -3,6 +3,7 @@ package com.dataflare.core
 import com.dataflare.connectors.ConnectorRegistry
 import com.dataflare.dsl.DslEngine
 import com.dataflare.dsl.ValidationResult
+import com.dataflare.engine.ExecutionEngineRegistry
 import com.dataflare.workflow.CompiledWorkflow
 import com.dataflare.workflow.WorkflowConfig
 import com.dataflare.workflow.WorkflowHandle
@@ -22,7 +23,8 @@ private val logger = KotlinLogging.logger {}
 class DataProcessingSystem(val name: String) {
     private val system = ActorSystem(name)
     private val connectorRegistry = ConnectorRegistry(system)
-    private val workflowManager = WorkflowManager(system, connectorRegistry)
+    private val engineRegistry = ExecutionEngineRegistry(system)
+    private val workflowManager = WorkflowManager(system, connectorRegistry, "flow")
     private val dslEngine = DslEngine()
 
     private var isRunning = false
@@ -40,7 +42,10 @@ class DataProcessingSystem(val name: String) {
 
         // 初始化系统组件
         connectorRegistry.initialize()
-        workflowManager.initialize()
+        engineRegistry.initialize()
+        runBlocking {
+            workflowManager.initialize()
+        }
 
         isRunning = true
         logger.info { "DataProcessingSystem $name started successfully" }
@@ -60,6 +65,7 @@ class DataProcessingSystem(val name: String) {
         // 优雅关闭组件
         runBlocking {
             workflowManager.shutdown()
+            engineRegistry.shutdown()
             connectorRegistry.shutdown()
             system.shutdown()
         }
@@ -71,9 +77,9 @@ class DataProcessingSystem(val name: String) {
     /**
      * 创建工作流
      */
-    fun createWorkflow(config: WorkflowConfig): WorkflowHandle {
-        logger.info { "Creating workflow: ${config.name}" }
-        return workflowManager.createWorkflow(config)
+    fun createWorkflow(config: WorkflowConfig, engineName: String = config.engineName): WorkflowHandle {
+        logger.info { "Creating workflow: ${config.name} with engine: $engineName" }
+        return workflowManager.createWorkflow(config, engineName)
     }
 
     /**

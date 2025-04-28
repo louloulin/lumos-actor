@@ -51,3 +51,18 @@ kotlin {
 application {
     mainClass.set("com.dataflare.MainKt")
 }
+
+// 添加一个运行任务，允许通过命令行参数指定主类
+tasks.register<JavaExec>("runClass") {
+    group = "application"
+    description = "Runs a specific class with main() method"
+    classpath = sourceSets["main"].runtimeClasspath
+
+    // 默认使用 MainKt 类
+    mainClass.set(project.findProperty("mainClass")?.toString() ?: "com.dataflare.MainKt")
+
+    // 传递命令行参数
+    if (project.hasProperty("args")) {
+        args = project.property("args").toString().split(",")
+    }
+}
