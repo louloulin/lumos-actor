@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Smartphone",
+    "category": "Electronics",
+    "price": 699.99,
+    "stock": 120,
+    "features": ["5G", "128GB Storage", "OLED Display"]
+  },
+  {
+    "id": 2,
+    "name": "Laptop",
+    "category": "Electronics",
+    "price": 1299.99,
+    "stock": 45,
+    "features": ["16GB RAM", "512GB SSD", "Intel i7"]
+  },
+  {
+    "id": 3,
+    "name": "Coffee Maker",
+    "category": "Kitchen",
+    "price": 89.99,
+    "stock": 78,
+    "features": ["Programmable", "12-Cup", "Auto Shutoff"]
+  },
+  {
+    "id": 4,
+    "name": "Wireless Headphones",
+    "category": "Electronics",
+    "price": 149.99,
+    "stock": 200,
+    "features": ["Noise Cancelling", "30hr Battery", "Bluetooth 5.0"]
+  },
+  {
+    "id": 5,
+    "name": "Blender",
+    "category": "Kitchen",
+    "price": 49.99,
+    "stock": 112,
+    "features": ["5 Speeds", "Dishwasher Safe", "BPA Free"]
+  },
+  {
+    "id": 6,
+    "name": "4K TV",
+    "category": "Electronics",
+    "price": 799.99,
+    "stock": 30,
+    "features": ["55 inch", "HDR", "Smart TV"]
+  },
+  {
+    "id": 7,
+    "name": "Toaster",
+    "category": "Kitchen",
+    "price": 29.99,
+    "stock": 150,
+    "features": ["4-Slice", "Wide Slots", "7 Settings"]
+  },
+  {
+    "id": 8,
+    "name": "Gaming Console",
+    "category": "Electronics",
+    "price": 499.99,
+    "stock": 25,
+    "features": ["4K Gaming", "1TB Storage", "Wireless Controller"]
+  },
+  {
+    "id": 9,
+    "name": "Microwave",
+    "category": "Kitchen",
+    "price": 119.99,
+    "stock": 60,
+    "features": ["1000W", "Stainless Steel", "Child Lock"]
+  },
+  {
+    "id": 10,
+    "name": "Tablet",
+    "category": "Electronics",
+    "price": 349.99,
+    "stock": 85,
+    "features": ["10 inch", "64GB Storage", "12MP Camera"]
+  }
+]

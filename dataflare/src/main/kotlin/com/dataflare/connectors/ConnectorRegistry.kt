@@ -13,6 +13,8 @@ import com.dataflare.processors.MappingProcessorFactory
 import com.dataflare.processors.Processor
 import com.dataflare.processors.ProcessorConfig
 import com.dataflare.processors.ProcessorFactory
+import com.dataflare.processors.json.JSONProcessorConfig
+import com.dataflare.processors.json.JSONProcessorFactory
 import com.dataflare.processors.script.JavaScriptConfig
 import com.dataflare.processors.script.JavaScriptProcessorFactory
 import mu.KotlinLogging
@@ -38,6 +40,7 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
         registerProcessor("mapping", MappingProcessorFactory())
         registerProcessor("filter", FilterProcessorFactory())
         registerProcessor("javascript", JavaScriptProcessorFactory())
+        registerProcessor("json", JSONProcessorFactory())
     }
 
     /**
@@ -180,6 +183,13 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
                 functionName = config["functionName"] as? String ?: "process",
                 initFunctionName = config["initFunctionName"] as? String ?: "init",
                 engineName = config["engineName"] as? String ?: "nashorn"
+            )
+            "json" -> JSONProcessorConfig(
+                operation = config["operation"] as? String ?: "parse",
+                field = config["field"] as? String ?: "content",
+                targetField = config["targetField"] as? String ?: "",
+                pretty = config["pretty"] as? Boolean ?: false,
+                arrayAsItems = config["arrayAsItems"] as? Boolean ?: true
             )
             else -> throw IllegalArgumentException("Unknown processor type: $type")
         }

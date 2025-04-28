@@ -1,0 +1,63 @@
+workflow:
+  name: "json-workflow"
+  inputs:
+    file_source:
+      type: "file"
+      config:
+        path: "dataflare/data/input/products.json"
+        format: "text"
+  
+  processors:
+    parse_json:
+      type: "json"
+      inputs: ["file_source"]
+      config:
+        operation: "parse"
+        field: "content"
+        arrayAsItems: true
+    
+    filter_expensive:
+      type: "filter"
+      inputs: ["parse_json"]
+      config:
+        condition: "items.price > 50"
+    
+    extract_names:
+      type: "json"
+      inputs: ["filter_expensive"]
+      config:
+        operation: "select"
+        field: "items"
+        targetField: "expensive_products"
+    
+    format_output:
+      type: "json"
+      inputs: ["extract_names"]
+      config:
+        operation: "stringify"
+        field: "expensive_products"
+        targetField: "result_json"
+        pretty: true
+  
+  outputs:
+    file_sink:
+      type: "file"
+      inputs: ["format_output"]
+      config:
+        path: "dataflare/data/output/expensive_products.json"
+        format: "text"
+        field: "result_json"
+  
+  connections:
+    - from: "file_source"
+      to: "parse_json"
+    - from: "parse_json"
+      to: "filter_expensive"
+    - from: "filter_expensive"
+      to: "extract_names"
+    - from: "extract_names"
+      to: "format_output"
+    - from: "format_output"
+      to: "file_sink"
+  
+  engineName: "flow"
