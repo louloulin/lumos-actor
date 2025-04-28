@@ -1,0 +1,13 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "\\Qworkflows/simple-workflow.yaml\\E"
+      },
+      {
+        "pattern": "\\Qinput/sample.csv\\E"
+      }
+    ]
+  },
+  "bundles": []
+}

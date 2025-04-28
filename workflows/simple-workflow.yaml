@@ -1,0 +1,29 @@
+name: simple-workflow
+description: A simple workflow for testing native image functionality
+
+source:
+  type: file
+  config:
+    path: input/sample.csv
+    format: csv
+
+processors:
+  - name: filter
+    type: filter
+    config:
+      condition: "age > 18"
+  
+  - name: transform
+    type: transform
+    config:
+      fields:
+        - name: full_name
+          expression: "concat(first_name, ' ', last_name)"
+        - name: is_adult
+          expression: "age >= 18"
+
+sink:
+  type: file
+  config:
+    path: output/processed.csv
+    format: csv
