@@ -13,6 +13,8 @@ import com.dataflare.processors.MappingProcessorFactory
 import com.dataflare.processors.Processor
 import com.dataflare.processors.ProcessorConfig
 import com.dataflare.processors.ProcessorFactory
+import com.dataflare.processors.aggregation.AggregationConfig
+import com.dataflare.processors.aggregation.AggregationProcessorFactory
 import com.dataflare.processors.json.JSONProcessorConfig
 import com.dataflare.processors.json.JSONProcessorFactory
 import com.dataflare.processors.script.JavaScriptConfig
@@ -41,6 +43,7 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
         registerProcessor("filter", FilterProcessorFactory())
         registerProcessor("javascript", JavaScriptProcessorFactory())
         registerProcessor("json", JSONProcessorFactory())
+        registerProcessor("aggregation", AggregationProcessorFactory())
     }
 
     /**
@@ -190,6 +193,14 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
                 targetField = config["targetField"] as? String ?: "",
                 pretty = config["pretty"] as? Boolean ?: false,
                 arrayAsItems = config["arrayAsItems"] as? Boolean ?: true
+            )
+            "aggregation" -> AggregationConfig(
+                operation = config["operation"] as String,
+                field = config["field"] as String,
+                groupBy = config["groupBy"] as? String,
+                windowSize = config["windowSize"] as? Int ?: 10,
+                windowType = config["windowType"] as? String ?: "count",
+                outputField = config["outputField"] as? String
             )
             else -> throw IllegalArgumentException("Unknown processor type: $type")
         }

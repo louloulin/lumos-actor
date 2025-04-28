@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "date": "2023-01-15",
+    "customer": "John Doe",
+    "category": "Electronics",
+    "product": "Smartphone",
+    "amount": 699.99,
+    "quantity": 1
+  },
+  {
+    "id": 2,
+    "date": "2023-01-16",
+    "customer": "Jane Smith",
+    "category": "Clothing",
+    "product": "T-shirt",
+    "amount": 29.99,
+    "quantity": 2
+  },
+  {
+    "id": 3,
+    "date": "2023-01-17",
+    "customer": "Bob Johnson",
+    "category": "Electronics",
+    "product": "Laptop",
+    "amount": 1299.99,
+    "quantity": 1
+  },
+  {
+    "id": 4,
+    "date": "2023-01-18",
+    "customer": "Alice Brown",
+    "category": "Home",
+    "product": "Coffee Maker",
+    "amount": 89.99,
+    "quantity": 1
+  },
+  {
+    "id": 5,
+    "date": "2023-01-19",
+    "customer": "Charlie Wilson",
+    "category": "Clothing",
+    "product": "Jeans",
+    "amount": 59.99,
+    "quantity": 1
+  },
+  {
+    "id": 6,
+    "date": "2023-01-20",
+    "customer": "Diana Miller",
+    "category": "Electronics",
+    "product": "Headphones",
+    "amount": 149.99,
+    "quantity": 1
+  },
+  {
+    "id": 7,
+    "date": "2023-01-21",
+    "customer": "Edward Davis",
+    "category": "Home",
+    "product": "Blender",
+    "amount": 49.99,
+    "quantity": 1
+  },
+  {
+    "id": 8,
+    "date": "2023-01-22",
+    "customer": "Fiona Clark",
+    "category": "Electronics",
+    "product": "TV",
+    "amount": 799.99,
+    "quantity": 1
+  },
+  {
+    "id": 9,
+    "date": "2023-01-23",
+    "customer": "George White",
+    "category": "Home",
+    "product": "Toaster",
+    "amount": 29.99,
+    "quantity": 1
+  },
+  {
+    "id": 10,
+    "date": "2023-01-24",
+    "customer": "Hannah Green",
+    "category": "Clothing",
+    "product": "Sweater",
+    "amount": 49.99,
+    "quantity": 1
+  }
+]

@@ -1,0 +1,92 @@
+workflow:
+  name: "aggregation-workflow"
+  inputs:
+    file_source:
+      type: "file"
+      config:
+        path: "dataflare/data/input/sales.json"
+        format: "text"
+  
+  processors:
+    parse_json:
+      type: "json"
+      inputs: ["file_source"]
+      config:
+        operation: "parse"
+        field: "content"
+        arrayAsItems: true
+    
+    sum_by_category:
+      type: "aggregation"
+      inputs: ["parse_json"]
+      config:
+        operation: "sum"
+        field: "items.amount"
+        groupBy: "items.category"
+        windowSize: 10
+        windowType: "count"
+        outputField: "total_sales"
+    
+    avg_by_category:
+      type: "aggregation"
+      inputs: ["parse_json"]
+      config:
+        operation: "avg"
+        field: "items.amount"
+        groupBy: "items.category"
+        windowSize: 10
+        windowType: "count"
+        outputField: "average_sale"
+    
+    format_sum_output:
+      type: "json"
+      inputs: ["sum_by_category"]
+      config:
+        operation: "stringify"
+        field: "*"
+        targetField: "result_json"
+        pretty: true
+    
+    format_avg_output:
+      type: "json"
+      inputs: ["avg_by_category"]
+      config:
+        operation: "stringify"
+        field: "*"
+        targetField: "result_json"
+        pretty: true
+  
+  outputs:
+    sum_file_sink:
+      type: "file"
+      inputs: ["format_sum_output"]
+      config:
+        path: "dataflare/data/output/sales_sum_by_category.json"
+        format: "text"
+        field: "result_json"
+    
+    avg_file_sink:
+      type: "file"
+      inputs: ["format_avg_output"]
+      config:
+        path: "dataflare/data/output/sales_avg_by_category.json"
+        format: "text"
+        field: "result_json"
+  
+  connections:
+    - from: "file_source"
+      to: "parse_json"
+    - from: "parse_json"
+      to: "sum_by_category"
+    - from: "parse_json"
+      to: "avg_by_category"
+    - from: "sum_by_category"
+      to: "format_sum_output"
+    - from: "avg_by_category"
+      to: "format_avg_output"
+    - from: "format_sum_output"
+      to: "sum_file_sink"
+    - from: "format_avg_output"
+      to: "avg_file_sink"
+  
+  engineName: "flow"
