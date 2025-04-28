@@ -9,7 +9,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.model.WorkflowConfig",
+    "name": "com.dataflare.native.bridge.DataflareBridge",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -18,7 +18,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.model.SourceConfig",
+    "name": "com.dataflare.native.bridge.DataflareBridge$WorkflowHandle",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -27,7 +27,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.model.ProcessorConfig",
+    "name": "com.dataflare.native.bridge.DataflareBridge$WorkflowConfig",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -36,7 +36,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.model.SinkConfig",
+    "name": "com.dataflare.native.bridge.DataflareBridge$InputConfig",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -45,7 +45,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.util.YamlParser",
+    "name": "com.dataflare.native.bridge.DataflareBridge$ProcessorConfig",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -54,7 +54,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.engine.WorkflowExecutor",
+    "name": "com.dataflare.native.bridge.DataflareBridge$OutputConfig",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -63,16 +63,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.dataflare.native.engine.ExecutionResult",
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true,
-    "allDeclaredFields": true,
-    "allPublicFields": true
-  },
-  {
-    "name": "com.dataflare.native.engine.ExecutionStatus",
+    "name": "com.dataflare.native.bridge.DataflareBridge$Connection",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -137,6 +128,20 @@
     "allPublicMethods": true
   },
   {
+    "name": "java.util.concurrent.ConcurrentHashMap",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "java.util.UUID",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
+  },
+  {
     "name": "com.fasterxml.jackson.databind.ObjectMapper",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
@@ -152,6 +157,20 @@
   },
   {
     "name": "com.fasterxml.jackson.module.kotlin.KotlinModule$Builder",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "kotlinx.coroutines.CoroutineScope",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "kotlinx.coroutines.Job",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,

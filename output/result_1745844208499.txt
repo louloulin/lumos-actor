@@ -1,0 +1,8 @@
+工作流执行结果
+工作流名称: simple-workflow
+工作流描述: A simple workflow for testing native image functionality
+开始时间: 2025-04-28T20:43:26.499787
+结束时间: 2025-04-28T20:43:28.499922
+执行时间: 2000 毫秒
+处理记录数: 5
+状态: 成功

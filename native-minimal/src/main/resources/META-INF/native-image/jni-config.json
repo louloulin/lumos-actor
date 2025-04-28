@@ -1,0 +1,50 @@
+[
+  {
+    "name": "java.lang.ClassLoader",
+    "methods": [
+      { "name": "findLoadedClass", "parameterTypes": ["java.lang.String"] },
+      { "name": "findLibrary", "parameterTypes": ["java.lang.String"] },
+      { "name": "loadClass", "parameterTypes": ["java.lang.String"] }
+    ]
+  },
+  {
+    "name": "java.lang.Class",
+    "methods": [
+      { "name": "forName", "parameterTypes": ["java.lang.String", "boolean", "java.lang.ClassLoader"] },
+      { "name": "getClassLoader", "parameterTypes": [] },
+      { "name": "getDeclaredConstructor", "parameterTypes": ["[Ljava.lang.Class;"] },
+      { "name": "getDeclaredField", "parameterTypes": ["java.lang.String"] },
+      { "name": "getDeclaredMethod", "parameterTypes": ["java.lang.String", "[Ljava.lang.Class;"] },
+      { "name": "getField", "parameterTypes": ["java.lang.String"] },
+      { "name": "getMethod", "parameterTypes": ["java.lang.String", "[Ljava.lang.Class;"] }
+    ]
+  },
+  {
+    "name": "java.lang.reflect.Constructor",
+    "methods": [
+      { "name": "newInstance", "parameterTypes": ["[Ljava.lang.Object;"] }
+    ]
+  },
+  {
+    "name": "java.lang.reflect.Field",
+    "methods": [
+      { "name": "get", "parameterTypes": ["java.lang.Object"] },
+      { "name": "set", "parameterTypes": ["java.lang.Object", "java.lang.Object"] }
+    ]
+  },
+  {
+    "name": "java.lang.reflect.Method",
+    "methods": [
+      { "name": "invoke", "parameterTypes": ["java.lang.Object", "[Ljava.lang.Object;"] }
+    ]
+  },
+  {
+    "name": "java.lang.System",
+    "methods": [
+      { "name": "getProperty", "parameterTypes": ["java.lang.String"] },
+      { "name": "getenv", "parameterTypes": ["java.lang.String"] },
+      { "name": "load", "parameterTypes": ["java.lang.String"] },
+      { "name": "loadLibrary", "parameterTypes": ["java.lang.String"] }
+    ]
+  }
+]

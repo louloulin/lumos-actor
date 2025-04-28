@@ -1,7 +1,6 @@
 package com.dataflare.native
 
-import com.dataflare.native.engine.WorkflowExecutor
-import com.dataflare.native.util.YamlParser
+import com.dataflare.native.bridge.DataflareBridge
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -11,11 +10,12 @@ import java.time.format.DateTimeFormatter
 /**
  * 增强版的 Dataflare Native 应用程序
  *
- * 这个版本包含更多功能，包括 YAML 解析和工作流执行
+ * 这个版本使用真实的 Dataflare 核心功能
  */
 object NativeMinimalApp {
     private const val VERSION = "0.1.0"
     private val startTime = LocalDateTime.now()
+    private var systemInitialized = false
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -32,11 +32,17 @@ object NativeMinimalApp {
             "info" -> printSystemInfo()
             "run" -> runWorkflow(args.drop(1).toTypedArray())
             "validate" -> validateWorkflow(args.drop(1).toTypedArray())
+            "dsl" -> runDsl(args.drop(1).toTypedArray())
             "help" -> printUsage()
             else -> {
                 println("未知命令: ${args[0]}")
                 printUsage()
             }
+        }
+
+        // 关闭系统
+        if (systemInitialized) {
+            DataflareBridge.shutdown()
         }
     }
 
@@ -69,6 +75,13 @@ object NativeMinimalApp {
         println("运行时长: ${LocalDateTime.now().second - startTime.second} 秒")
     }
 
+    private fun initializeSystem(): Boolean {
+        if (!systemInitialized) {
+            systemInitialized = DataflareBridge.initialize("dataflare-native")
+        }
+        return systemInitialized
+    }
+
     private fun runWorkflow(args: Array<String>) {
         if (args.isEmpty()) {
             println("错误: 未指定工作流配置文件")
@@ -88,20 +101,19 @@ object NativeMinimalApp {
         File("output").mkdirs()
 
         try {
-            // 解析工作流配置
-            val workflowConfig = YamlParser.parseWorkflowConfig(File(configFile))
-
-            // 打印工作流信息
-            println("工作流名称: ${workflowConfig.name}")
-            println("工作流描述: ${workflowConfig.description ?: "无"}")
+            // 初始化系统
+            if (!initializeSystem()) {
+                println("错误: 无法初始化 Dataflare 系统")
+                return
+            }
 
             // 执行工作流
-            val executor = WorkflowExecutor()
-            val result = executor.execute(workflowConfig)
-
-            println("工作流执行状态: ${result.status}")
-            println("处理记录数: ${result.recordsProcessed}")
-            println("执行时间: ${result.duration.toMillis()} 毫秒")
+            val success = DataflareBridge.executeWorkflow(File(configFile))
+            if (success) {
+                println("工作流执行成功!")
+            } else {
+                println("工作流执行失败!")
+            }
         } catch (e: Exception) {
             println("工作流执行失败: ${e.message}")
             e.printStackTrace()
@@ -124,41 +136,74 @@ object NativeMinimalApp {
         println("正在验证工作流: $configFile")
 
         try {
-            // 解析工作流配置
-            val workflowConfig = YamlParser.parseWorkflowConfig(File(configFile))
-
-            // 验证工作流配置
-            println("工作流配置验证成功:")
-            println("- 工作流名称: ${workflowConfig.name}")
-            println("- 工作流描述: ${workflowConfig.description ?: "无"}")
-            println("- 数据源类型: ${workflowConfig.source.type}")
-            println("- 处理器数量: ${workflowConfig.processors.size}")
-            println("- 数据汇类型: ${workflowConfig.sink.type}")
-
-            // 验证数据源配置
-            println("数据源配置:")
-            workflowConfig.source.config.forEach { (key, value) ->
-                println("  - $key: $value")
+            // 初始化系统
+            if (!initializeSystem()) {
+                println("错误: 无法初始化 Dataflare 系统")
+                return
             }
 
-            // 验证处理器配置
-            println("处理器配置:")
-            workflowConfig.processors.forEachIndexed { index, processor ->
-                println("  ${index + 1}. ${processor.name} (${processor.type}):")
-                processor.config.forEach { (key, value) ->
-                    println("    - $key: $value")
-                }
+            // 加载工作流配置
+            val config = DataflareBridge.loadWorkflow(File(configFile))
+            if (config != null) {
+                println("工作流配置验证成功:")
+                println("- 工作流名称: ${config.name}")
+                println("- 输入数量: ${config.inputs.size}")
+                println("- 处理器数量: ${config.processors.size}")
+                println("- 输出数量: ${config.outputs.size}")
+                println("- 连接数量: ${config.connections.size}")
+                println("- 执行引擎: ${config.engineName}")
+                println("工作流配置验证成功!")
+            } else {
+                println("工作流配置验证失败!")
             }
-
-            // 验证数据汇配置
-            println("数据汇配置:")
-            workflowConfig.sink.config.forEach { (key, value) ->
-                println("  - $key: $value")
-            }
-
-            println("工作流配置验证成功!")
         } catch (e: Exception) {
             println("工作流配置验证失败: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private fun runDsl(args: Array<String>) {
+        if (args.isEmpty()) {
+            println("错误: 未指定 DSL 脚本文件")
+            println("用法: dataflare dsl <dsl-script-file>")
+            return
+        }
+
+        val scriptFile = args[0]
+        if (!Files.exists(Paths.get(scriptFile))) {
+            println("错误: DSL 脚本文件不存在: $scriptFile")
+            return
+        }
+
+        println("正在运行 DSL 脚本: $scriptFile")
+
+        try {
+            // 初始化系统
+            if (!initializeSystem()) {
+                println("错误: 无法初始化 Dataflare 系统")
+                return
+            }
+
+            // 读取 DSL 脚本
+            val dslScript = File(scriptFile).readText()
+
+            // 验证 DSL 脚本
+            val isValid = DataflareBridge.validateDsl(dslScript)
+            if (isValid) {
+                println("DSL 脚本验证成功!")
+
+                // 编译 DSL 脚本
+                val workflowName = DataflareBridge.compileDsl(dslScript)
+                if (workflowName != null) {
+                    println("DSL 脚本编译成功: $workflowName")
+                } else {
+                    println("DSL 脚本编译失败!")
+                }
+            } else {
+                println("DSL 脚本验证失败!")
+            }
+        } catch (e: Exception) {
+            println("DSL 脚本执行失败: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -170,6 +215,7 @@ object NativeMinimalApp {
         println("  info       显示系统信息")
         println("  run        运行工作流")
         println("  validate   验证工作流配置")
+        println("  dsl        运行 DSL 脚本")
         println("  help       显示帮助信息")
         println()
         println("示例:")
@@ -177,5 +223,6 @@ object NativeMinimalApp {
         println("  dataflare info")
         println("  dataflare run workflows/simple-workflow.yaml")
         println("  dataflare validate workflows/simple-workflow.yaml")
+        println("  dataflare dsl workflows/simple-workflow.dsl")
     }
 }

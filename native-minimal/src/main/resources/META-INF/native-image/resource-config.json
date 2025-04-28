@@ -5,7 +5,19 @@
         "pattern": "\\Qworkflows/simple-workflow.yaml\\E"
       },
       {
+        "pattern": "\\Qworkflows/simple-workflow.dsl\\E"
+      },
+      {
         "pattern": "\\Qinput/sample.csv\\E"
+      },
+      {
+        "pattern": ".*\\.properties"
+      },
+      {
+        "pattern": ".*\\.conf"
+      },
+      {
+        "pattern": "META-INF/services/.*"
       }
     ]
   },
