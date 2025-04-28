@@ -1,5 +1,9 @@
 package com.dataflare.connectors
 
+import com.dataflare.connectors.database.PostgresConfig
+import com.dataflare.connectors.database.PostgresConnectorFactory
+import com.dataflare.connectors.queue.RedisConfig
+import com.dataflare.connectors.queue.RedisConnectorFactory
 import com.dataflare.processors.FilterConfig
 import com.dataflare.processors.FilterProcessorFactory
 import com.dataflare.processors.MappingConfig
@@ -7,6 +11,8 @@ import com.dataflare.processors.MappingProcessorFactory
 import com.dataflare.processors.Processor
 import com.dataflare.processors.ProcessorConfig
 import com.dataflare.processors.ProcessorFactory
+import com.dataflare.processors.script.JavaScriptConfig
+import com.dataflare.processors.script.JavaScriptProcessorFactory
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -22,10 +28,13 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
     init {
         // 注册默认连接器
         registerConnector("file", FileConnectorFactory())
+        registerConnector("postgres", PostgresConnectorFactory())
+        registerConnector("redis", RedisConnectorFactory())
 
         // 注册默认处理器
         registerProcessor("mapping", MappingProcessorFactory())
         registerProcessor("filter", FilterProcessorFactory())
+        registerProcessor("javascript", JavaScriptProcessorFactory())
     }
 
     /**
@@ -58,13 +67,38 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
      */
     fun createInput(type: String, config: Map<String, Any>): Input {
         val factory = inputFactories[type] ?: throw IllegalArgumentException("Unknown input type: $type")
-        val fileConfig = FileConfig(
-            type = type,
-            path = config["path"] as String,
-            format = config["format"] as? String ?: "json",
-            append = config["append"] as? Boolean ?: false
-        )
-        return factory.createInput(fileConfig)
+
+        val connectorConfig = when (type) {
+            "file" -> FileConfig(
+                type = type,
+                path = config["path"] as String,
+                format = config["format"] as? String ?: "json",
+                append = config["append"] as? Boolean ?: false
+            )
+            "postgres" -> PostgresConfig(
+                type = type,
+                connectionString = config["connectionString"] as String,
+                table = config["table"] as String,
+                columns = config["columns"] as? List<String> ?: emptyList(),
+                query = config["query"] as? String ?: "",
+                batchSize = config["batchSize"] as? Int ?: 100
+            )
+            "redis" -> RedisConfig(
+                type = type,
+                host = config["host"] as? String ?: "localhost",
+                port = config["port"] as? Int ?: 6379,
+                password = config["password"] as? String,
+                database = config["database"] as? Int ?: 0,
+                key = config["key"] as String,
+                listMode = config["listMode"] as? Boolean ?: true,
+                channelMode = config["channelMode"] as? Boolean ?: false,
+                batchSize = config["batchSize"] as? Int ?: 100,
+                timeout = config["timeout"] as? Int ?: 2000
+            )
+            else -> throw IllegalArgumentException("Unknown input type: $type")
+        }
+
+        return factory.createInput(connectorConfig)
     }
 
     /**
@@ -72,13 +106,38 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
      */
     fun createOutput(type: String, config: Map<String, Any>): Output {
         val factory = outputFactories[type] ?: throw IllegalArgumentException("Unknown output type: $type")
-        val fileConfig = FileConfig(
-            type = type,
-            path = config["path"] as String,
-            format = config["format"] as? String ?: "json",
-            append = config["append"] as? Boolean ?: false
-        )
-        return factory.createOutput(fileConfig)
+
+        val connectorConfig = when (type) {
+            "file" -> FileConfig(
+                type = type,
+                path = config["path"] as String,
+                format = config["format"] as? String ?: "json",
+                append = config["append"] as? Boolean ?: false
+            )
+            "postgres" -> PostgresConfig(
+                type = type,
+                connectionString = config["connectionString"] as String,
+                table = config["table"] as String,
+                columns = config["columns"] as? List<String> ?: emptyList(),
+                query = config["query"] as? String ?: "",
+                batchSize = config["batchSize"] as? Int ?: 100
+            )
+            "redis" -> RedisConfig(
+                type = type,
+                host = config["host"] as? String ?: "localhost",
+                port = config["port"] as? Int ?: 6379,
+                password = config["password"] as? String,
+                database = config["database"] as? Int ?: 0,
+                key = config["key"] as String,
+                listMode = config["listMode"] as? Boolean ?: true,
+                channelMode = config["channelMode"] as? Boolean ?: false,
+                batchSize = config["batchSize"] as? Int ?: 100,
+                timeout = config["timeout"] as? Int ?: 2000
+            )
+            else -> throw IllegalArgumentException("Unknown output type: $type")
+        }
+
+        return factory.createOutput(connectorConfig)
     }
 
     /**
@@ -92,6 +151,12 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
             )
             "filter" -> FilterConfig(
                 condition = config["condition"] as String
+            )
+            "javascript" -> JavaScriptConfig(
+                script = config["script"] as String,
+                functionName = config["functionName"] as? String ?: "process",
+                initFunctionName = config["initFunctionName"] as? String ?: "init",
+                engineName = config["engineName"] as? String ?: "nashorn"
             )
             else -> throw IllegalArgumentException("Unknown processor type: $type")
         }

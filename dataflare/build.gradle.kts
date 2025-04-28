@@ -33,11 +33,24 @@ dependencies {
     implementation("com.sksamuel.hoplite:hoplite-core:2.7.5")
     implementation("com.sksamuel.hoplite:hoplite-yaml:2.7.5")
 
+    // Database
+    implementation("org.postgresql:postgresql:42.6.0")
+
+    // Message Queue
+    implementation("redis.clients:jedis:5.1.0")
+
+    // JavaScript Engine
+    implementation("org.graalvm.js:js:22.3.1")
+    implementation("org.graalvm.js:js-scriptengine:22.3.1")
+
     // Testing
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-runner-junit5:5.6.2")
     testImplementation("io.kotest:kotest-assertions-core:5.6.2")
     testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation("org.testcontainers:testcontainers:1.19.1")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.1")
+    testImplementation("org.testcontainers:postgresql:1.19.1")
 }
 
 tasks.test {
