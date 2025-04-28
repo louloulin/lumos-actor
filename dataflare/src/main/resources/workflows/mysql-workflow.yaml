@@ -1,0 +1,54 @@
+workflow:
+  name: "mysql-workflow"
+  inputs:
+    mysql_source:
+      type: "mysql"
+      config:
+        connectionString: "jdbc:mysql://localhost:3306/dataflare"
+        table: "source_data"
+        columns: ["id", "name", "value", "created_at"]
+        useSSL: false
+        allowPublicKeyRetrieval: true
+  
+  processors:
+    filter_high_value:
+      type: "filter"
+      inputs: ["mysql_source"]
+      config:
+        condition: "value > 1000"
+    
+    enrich_data:
+      type: "mapping"
+      inputs: ["filter_high_value"]
+      config:
+        mapping: ".processed_at = ${System.currentTimeMillis()}"
+  
+  outputs:
+    mysql_sink:
+      type: "mysql"
+      inputs: ["enrich_data"]
+      config:
+        connectionString: "jdbc:mysql://localhost:3306/dataflare"
+        table: "high_value_items"
+        columns: ["id", "name", "value", "created_at", "processed_at"]
+        useSSL: false
+        allowPublicKeyRetrieval: true
+
+    file_sink:
+      type: "file"
+      inputs: ["enrich_data"]
+      config:
+        path: "dataflare/data/output/high_value_items.json"
+        format: "json"
+  
+  connections:
+    - from: "mysql_source"
+      to: "filter_high_value"
+    - from: "filter_high_value"
+      to: "enrich_data"
+    - from: "enrich_data"
+      to: "mysql_sink"
+    - from: "enrich_data"
+      to: "file_sink"
+  
+  engineName: "flow"

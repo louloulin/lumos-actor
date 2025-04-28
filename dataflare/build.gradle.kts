@@ -35,6 +35,7 @@ dependencies {
 
     // Database
     implementation("org.postgresql:postgresql:42.6.0")
+    implementation("mysql:mysql-connector-java:8.0.33")
 
     // Message Queue
     implementation("redis.clients:jedis:5.1.0")
@@ -51,6 +52,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:1.19.1")
     testImplementation("org.testcontainers:junit-jupiter:1.19.1")
     testImplementation("org.testcontainers:postgresql:1.19.1")
+    testImplementation("org.testcontainers:mysql:1.19.1")
 }
 
 tasks.test {

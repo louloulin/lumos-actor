@@ -31,7 +31,7 @@ Dataflare 是一个数据处理平台，目前已实现了基本的数据流处�
 #### 1.1 数据库连接器
 
 - [x] PostgreSQL 连接器
-- [ ] MySQL 连接器
+- [x] MySQL 连接器
 - [ ] MongoDB 连接器
 - [ ] Elasticsearch 连接器
 - [ ] Cassandra 连接器
@@ -97,8 +97,8 @@ Dataflare 是一个数据处理平台，目前已实现了基本的数据流处�
 
 - [x] JavaScript 处理器
 - [ ] Python 处理器
-- [ ] Groovy 处理器
-- [ ] Lua 处理器
+- [ ] kotlin 处理器
+- [ ] wasm 处理器
 
 #### 2.4 AI 集成处理器
 
@@ -199,10 +199,10 @@ Dataflare 是一个数据处理平台，目前已实现了基本的数据流处�
 ### 第一阶段（短期：1-3个月）
 
 1. **核心连接器扩展**
-   - MySQL 连接器
-   - Kafka 连接器
-   - HTTP 客户端/服务器连接器
-   - MongoDB 连接器
+   - [x] MySQL 连接器
+   - [ ] Kafka 连接器
+   - [ ] HTTP 客户端/服务器连接器
+   - [ ] MongoDB 连接器
 
 2. **基础处理器增强**
    - JSON 处理器

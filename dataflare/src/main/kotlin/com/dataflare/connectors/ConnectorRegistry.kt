@@ -2,6 +2,8 @@ package com.dataflare.connectors
 
 import com.dataflare.connectors.database.PostgresConfig
 import com.dataflare.connectors.database.PostgresConnectorFactory
+import com.dataflare.connectors.database.MySQLConfig
+import com.dataflare.connectors.database.MySQLConnectorFactory
 import com.dataflare.connectors.queue.RedisConfig
 import com.dataflare.connectors.queue.RedisConnectorFactory
 import com.dataflare.processors.FilterConfig
@@ -29,6 +31,7 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
         // 注册默认连接器
         registerConnector("file", FileConnectorFactory())
         registerConnector("postgres", PostgresConnectorFactory())
+        registerConnector("mysql", MySQLConnectorFactory())
         registerConnector("redis", RedisConnectorFactory())
 
         // 注册默认处理器
@@ -83,6 +86,16 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
                 query = config["query"] as? String ?: "",
                 batchSize = config["batchSize"] as? Int ?: 100
             )
+            "mysql" -> MySQLConfig(
+                type = type,
+                connectionString = config["connectionString"] as String,
+                table = config["table"] as String,
+                columns = config["columns"] as? List<String> ?: emptyList(),
+                query = config["query"] as? String ?: "",
+                batchSize = config["batchSize"] as? Int ?: 100,
+                useSSL = config["useSSL"] as? Boolean ?: false,
+                allowPublicKeyRetrieval = config["allowPublicKeyRetrieval"] as? Boolean ?: false
+            )
             "redis" -> RedisConfig(
                 type = type,
                 host = config["host"] as? String ?: "localhost",
@@ -121,6 +134,16 @@ class ConnectorRegistry(private val system: actor.proto.ActorSystem? = null) {
                 columns = config["columns"] as? List<String> ?: emptyList(),
                 query = config["query"] as? String ?: "",
                 batchSize = config["batchSize"] as? Int ?: 100
+            )
+            "mysql" -> MySQLConfig(
+                type = type,
+                connectionString = config["connectionString"] as String,
+                table = config["table"] as String,
+                columns = config["columns"] as? List<String> ?: emptyList(),
+                query = config["query"] as? String ?: "",
+                batchSize = config["batchSize"] as? Int ?: 100,
+                useSSL = config["useSSL"] as? Boolean ?: false,
+                allowPublicKeyRetrieval = config["allowPublicKeyRetrieval"] as? Boolean ?: false
             )
             "redis" -> RedisConfig(
                 type = type,
