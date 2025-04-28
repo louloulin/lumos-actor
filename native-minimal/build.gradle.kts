@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("org.graalvm.buildtools.native") version "0.10.1"
+    application
 }
 
 group = "com.dataflare"
@@ -29,12 +30,17 @@ tasks.withType<ProcessResources> {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
+// 设置应用程序主类
+application {
+    mainClass.set("com.dataflare.native.NativeApp")
+}
+
 // GraalVM Native Image 配置
 graalvmNative {
     binaries {
         named("main") {
             imageName.set("dataflare")
-            mainClass.set("com.dataflare.native.NativeMinimalApp")
+            mainClass.set("com.dataflare.native.NativeApp")
             debug.set(true) // 开发阶段启用调试信息
             buildArgs.add("--verbose")
             buildArgs.add("--no-fallback")
@@ -51,9 +57,20 @@ graalvmNative {
             buildArgs.add("-H:+JNI")
             buildArgs.add("-H:+ReportUnsupportedElementsAtRuntime")
             buildArgs.add("-H:+AllowIncompleteClasspath")
-            buildArgs.add("--initialize-at-build-time=org.slf4j,ch.qos.logback")
-            buildArgs.add("--initialize-at-run-time=io.netty,com.sun.jmx,com.sun.management")
+            buildArgs.add("--initialize-at-build-time=org.slf4j,ch.qos.logback,com.fasterxml.jackson,org.yaml")
+            buildArgs.add("--initialize-at-run-time=io.netty,com.sun.jmx,com.sun.management,kotlinx.coroutines")
             buildArgs.add("--allow-incomplete-classpath")
+
+            // 特别处理 Kotlin 协程
+            buildArgs.add("-H:+UnlockExperimentalVMOptions")
+            buildArgs.add("-H:+EnableCoroutines")
+            buildArgs.add("-H:+AddAllCharsets")
+            buildArgs.add("-H:+TraceClassInitialization")
+
+            // 避免 ARM64 架构上的问题
+            buildArgs.add("-H:+UseLargePages")
+            buildArgs.add("-H:LargePageSize=2M")
+            buildArgs.add("-H:+UseOnlyLowLatencyVMOperations")
         }
     }
 }
