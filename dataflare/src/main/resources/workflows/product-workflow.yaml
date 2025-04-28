@@ -1,0 +1,97 @@
+workflow:
+  name: "product-workflow"
+  version: "1.0"
+  engineName: "flow"
+
+  inputs:
+    products:
+      type: "file"
+      config:
+        path: "dataflare/data/products.json"
+        format: "json"
+
+  processors:
+    parse:
+      type: "mapping"
+      inputs: ["products"]
+      config:
+        mapping: "json.parse(content)"
+
+    filter-electronics:
+      type: "filter"
+      inputs: ["parse"]
+      config:
+        condition: "items.category == \"Electronics\""
+
+    filter-expensive:
+      type: "filter"
+      inputs: ["parse"]
+      config:
+        condition: "items.price > 100"
+
+    filter-low-stock:
+      type: "filter"
+      inputs: ["parse"]
+      config:
+        condition: "items.stock < 50"
+
+    add-metadata:
+      type: "mapping"
+      inputs: ["filter-electronics"]
+      config:
+        mapping: ".processed_time = 1683721200000"
+
+    javascript-transform:
+      type: "javascript"
+      inputs: ["filter-expensive"]
+      config:
+        script: |
+          function process(message, context) {
+            message.discount = message.price * 0.1;
+            message.discounted_price = message.price - message.discount;
+            message.processed_by = "javascript";
+            return message;
+          }
+        engineName: "nashorn"
+
+  outputs:
+    electronics:
+      type: "file"
+      inputs: ["add-metadata"]
+      config:
+        path: "dataflare/data/output/electronics.json"
+        format: "json"
+
+    expensive:
+      type: "file"
+      inputs: ["javascript-transform"]
+      config:
+        path: "dataflare/data/output/expensive.json"
+        format: "json"
+
+    low-stock:
+      type: "file"
+      inputs: ["filter-low-stock"]
+      config:
+        path: "dataflare/data/output/low-stock.json"
+        format: "json"
+
+  connections:
+    - from: "products"
+      to: "parse"
+    - from: "parse"
+      to: "filter-electronics"
+    - from: "parse"
+      to: "filter-expensive"
+    - from: "parse"
+      to: "filter-low-stock"
+    - from: "filter-electronics"
+      to: "add-metadata"
+    - from: "filter-expensive"
+      to: "javascript-transform"
+    - from: "add-metadata"
+      to: "electronics"
+    - from: "javascript-transform"
+      to: "expensive"
+    - from: "filter-low-stock"
+      to: "low-stock"

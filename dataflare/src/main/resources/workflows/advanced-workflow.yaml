@@ -1,0 +1,120 @@
+workflow:
+  name: "advanced-data-pipeline"
+  version: "1.0"
+  engineName: "protoactor"
+
+  inputs:
+    redis_source:
+      type: "redis"
+      config:
+        host: "localhost"
+        port: 6379
+        key: "dataflare-input"
+        listMode: true
+
+    file_source:
+      type: "file"
+      config:
+        path: "dataflare/data/customers.json"
+        format: "json"
+
+  processors:
+    parse_redis:
+      type: "mapping"
+      inputs: ["redis_source"]
+      config:
+        mapping: "json.parse(content)"
+
+    parse_file:
+      type: "mapping"
+      inputs: ["file_source"]
+      config:
+        mapping: "json.parse(content)"
+
+    enrich_data:
+      type: "javascript"
+      inputs: ["parse_redis"]
+      config:
+        script: |
+          function process(message, context) {
+            // 添加处理时间戳
+            message.processed_at = new Date().toISOString();
+            
+            // 计算折扣价格
+            let discount = 0;
+            if (message.category === "Electronics") {
+              discount = 0.1; // 电子产品10%折扣
+            } else {
+              discount = 0.05; // 其他产品5%折扣
+            }
+            
+            message.discounted_price = message.price * (1 - discount);
+            message.discount_percentage = discount * 100;
+            
+            return message;
+          }
+        engineName: "nashorn"
+
+    join_data:
+      type: "mapping"
+      inputs: ["enrich_data", "parse_file"]
+      config:
+        mapping: |
+          // 这里简化了连接逻辑，实际应用中可能需要更复杂的实现
+          if (message.source == "redis") {
+            return message;
+          } else if (message.source == "file") {
+            return message;
+          }
+          return message;
+
+    filter_high_value:
+      type: "filter"
+      inputs: ["join_data"]
+      config:
+        condition: "items.price > 100 || items.customer_value == 'high'"
+
+  outputs:
+    postgres_sink:
+      type: "postgres"
+      inputs: ["filter_high_value"]
+      config:
+        connectionString: "jdbc:postgresql://localhost:5432/dataflare"
+        table: "high_value_items"
+        columns: ["id", "name", "price", "category", "discounted_price", "processed_at"]
+
+    redis_sink:
+      type: "redis"
+      inputs: ["enrich_data"]
+      config:
+        host: "localhost"
+        port: 6379
+        key: "dataflare-output"
+        listMode: true
+
+    file_sink:
+      type: "file"
+      inputs: ["join_data"]
+      config:
+        path: "dataflare/data/output/joined_data.json"
+        format: "json"
+
+  connections:
+    - from: "redis_source"
+      to: "parse_redis"
+    - from: "file_source"
+      to: "parse_file"
+    - from: "parse_redis"
+      to: "enrich_data"
+    - from: "enrich_data"
+      to: "join_data"
+    - from: "parse_file"
+      to: "join_data"
+    - from: "join_data"
+      to: "filter_high_value"
+    - from: "filter_high_value"
+      to: "postgres_sink"
+    - from: "enrich_data"
+      to: "redis_sink"
+    - from: "join_data"
+      to: "file_sink"

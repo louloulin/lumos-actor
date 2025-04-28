@@ -540,6 +540,8 @@ class HybridClusterRuntime(val config: HybridClusterConfig) {
 
 3. 实现配置系统 ✅
    - 创建 YAML/JSON 配置解析器 ✅
+     - 实现 YAML 工作流配置加载器 ✅
+     - 支持从 YAML 文件加载工作流配置 ✅
    - 实现 DSL 到配置的转换 ✅
    - 支持环境变量和模板 ✅
    - 实现配置验证和测试 ✅
