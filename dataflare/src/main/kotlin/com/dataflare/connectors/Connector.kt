@@ -81,53 +81,10 @@ interface Output {
 }
 
 /**
- * 连接器注册表，管理所有可用的连接器
+ * 连接器工厂接口
  */
-class ConnectorRegistry(private val system: actor.proto.ActorSystem) {
-    private val inputs = mutableMapOf<String, (Config) -> Input>()
-    private val outputs = mutableMapOf<String, (Config) -> Output>()
-
-    /**
-     * 初始化连接器注册表
-     */
-    fun initialize() {
-        // 注册内置连接器
-    }
-
-    /**
-     * 注册输入连接器
-     */
-    fun registerInput(type: String, factory: (Config) -> Input) {
-        inputs[type] = factory
-    }
-
-    /**
-     * 注册输出连接器
-     */
-    fun registerOutput(type: String, factory: (Config) -> Output) {
-        outputs[type] = factory
-    }
-
-    /**
-     * 创建输入连接器
-     */
-    fun createInput(type: String, config: Config): Input {
-        val factory = inputs[type] ?: throw IllegalArgumentException("Unknown input type: $type")
-        return factory(config)
-    }
-
-    /**
-     * 创建输出连接器
-     */
-    fun createOutput(type: String, config: Config): Output {
-        val factory = outputs[type] ?: throw IllegalArgumentException("Unknown output type: $type")
-        return factory(config)
-    }
-
-    /**
-     * 关闭连接器注册表
-     */
-    suspend fun shutdown() {
-        // 清理资源
-    }
+interface ConnectorFactory {
+    fun createInput(config: Config): Input
+    fun createOutput(config: Config): Output
 }
+

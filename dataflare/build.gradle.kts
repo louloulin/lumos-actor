@@ -23,6 +23,7 @@ dependencies {
 
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.json:json:20240303")
 
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
