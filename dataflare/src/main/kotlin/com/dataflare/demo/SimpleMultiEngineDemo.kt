@@ -3,6 +3,7 @@ package com.dataflare.demo
 import com.dataflare.core.DataProcessingSystem
 import com.dataflare.engine.ExecutionEngineFactory
 import com.dataflare.engine.FlowExecutionEngine
+import com.dataflare.engine.ProtoActorExecutionEngine
 
 
 import com.dataflare.workflow.Connection
@@ -28,6 +29,7 @@ object SimpleMultiEngineDemo {
 
         // 注册执行引擎
         ExecutionEngineFactory.registerEngine(FlowExecutionEngine())
+        ExecutionEngineFactory.registerEngine(ProtoActorExecutionEngine(actor.proto.ActorSystem("demo-system")))
 
         // 创建示例数据
         createSampleData()
@@ -58,24 +60,24 @@ object SimpleMultiEngineDemo {
             // 显示 Flow 工作流处理结果
             displayResults("flow")
 
-            // 创建另一个 Flow 引擎工作流，模拟多引擎
-            val anotherFlowWorkflowConfig = createWorkflowConfig("another-flow-workflow", "flow")
+            // 创建 ProtoActor 引擎工作流
+            val protoActorWorkflowConfig = createWorkflowConfig("protoactor-workflow", "protoactor")
 
-            // 部署另一个 Flow 工作流
-            val anotherFlowWorkflowHandle = dataProcessingSystem.createWorkflow(anotherFlowWorkflowConfig, "flow")
+            // 部署 ProtoActor 工作流
+            val protoActorWorkflowHandle = dataProcessingSystem.createWorkflow(protoActorWorkflowConfig, "protoactor")
 
-            // 启动另一个 Flow 工作流
-            dataProcessingSystem.startWorkflow(anotherFlowWorkflowHandle)
+            // 启动 ProtoActor 工作流
+            dataProcessingSystem.startWorkflow(protoActorWorkflowHandle)
 
-            // 等待另一个 Flow 工作流执行完成
-            logger.info { "Waiting for another Flow workflow to complete..." }
-            delay(2000)
+            // 等待 ProtoActor 工作流执行完成
+            logger.info { "Waiting for ProtoActor workflow to complete..." }
+            delay(5000) // 增加等待时间，确保 ProtoActor 引擎有足够时间处理消息
 
-            // 停止另一个 Flow 工作流
-            dataProcessingSystem.stopWorkflow(anotherFlowWorkflowHandle)
+            // 停止 ProtoActor 工作流
+            dataProcessingSystem.stopWorkflow(protoActorWorkflowHandle)
 
-            // 显示另一个 Flow 工作流处理结果
-            displayResults("another-flow")
+            // 显示 ProtoActor 工作流处理结果
+            displayResults("protoactor")
 
             // 停止数据处理系统
             dataProcessingSystem.stop()
@@ -105,7 +107,7 @@ object SimpleMultiEngineDemo {
         // 确保目录存在
         File("dataflare/data").mkdirs()
         File("dataflare/data/flow").mkdirs()
-        File("dataflare/data/another-flow").mkdirs()
+        File("dataflare/data/protoactor").mkdirs()
 
         // 写入示例数据
         File("dataflare/data/products.json").writeText(productsJson)
